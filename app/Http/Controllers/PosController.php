@@ -51,7 +51,10 @@ class PosController extends Controller
                 $product = Product::lockForUpdate()->findOrFail($itemData['product_id']);
                 
                 if ($product->stock < $itemData['quantity']) {
-                    throw new \Exception("Insufficient stock for product: {$product->name}");
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Insufficient stock for product: {$product->name}"
+                    ], 422);
                 }
 
                 $item_total = $product->base_price * $itemData['quantity'];
