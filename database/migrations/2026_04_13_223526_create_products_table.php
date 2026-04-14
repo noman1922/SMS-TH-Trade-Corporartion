@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('sku')->unique();
-            $table->decimal('base_price', 15, 2);
-            $table->integer('stock')->default(0);
-            $table->text('description')->nullable();
+            $table->string('product_name');
+            $table->string('product_id')->unique()->index();
+            $table->string('model_no')->nullable();
+            $table->decimal('cost_price', 15, 2);
+            $table->decimal('selling_price', 15, 2);
+            $table->unsignedInteger('stock_quantity')->default(0);
+            $table->string('category')->default('Medical Equipment');
             $table->timestamps();
         });
     }
