@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('mobile', 20)->unique();
-            $table->text('address')->nullable();
+            $table->string('customer_name');
+            $table->string('hospital_name')->nullable();
+            $table->text('address');
+            $table->string('mobile')->unique()->index();
+            $table->decimal('previous_due', 15, 2)->default(0);
             $table->timestamps();
         });
     }
