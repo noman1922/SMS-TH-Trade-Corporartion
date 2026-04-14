@@ -14,17 +14,17 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white py-3 border-bottom border-secondary">
+            <a href="{{ route('products.index') }}" class="nav-link text-white py-3 border-bottom border-secondary {{ request()->routeIs('products.*') ? 'bg-secondary' : '' }}">
                 <i class="bi bi-box-seam me-2"></i> Products
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white py-3 border-bottom border-secondary">
+            <a href="{{ route('customers.index') }}" class="nav-link text-white py-3 border-bottom border-secondary {{ request()->routeIs('customers.*') ? 'bg-secondary' : '' }}">
                 <i class="bi bi-people me-2"></i> Customers
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white py-3 border-bottom border-secondary">
+            <a href="{{ route('stock.index') }}" class="nav-link text-white py-3 border-bottom border-secondary {{ request()->routeIs('stock.*') ? 'bg-secondary' : '' }}">
                 <i class="bi bi-stack me-2"></i> Stock
             </a>
         </li>
@@ -34,7 +34,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white py-3 border-bottom border-secondary">
+            <a href="{{ route('payments.index') }}" class="nav-link text-white py-3 border-bottom border-secondary {{ request()->routeIs('payments.*') ? 'bg-secondary' : '' }}">
                 <i class="bi bi-cash-stack me-2"></i> Due Collection
             </a>
         </li>

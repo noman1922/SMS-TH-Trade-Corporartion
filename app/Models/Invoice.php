@@ -27,4 +27,24 @@ class Invoice extends Model
     {
         return $this->hasMany(InvoiceItem::class);
     }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
+
+    /**
+     * Financial Summaries
+     */
+    public function getRemainingDueAttribute()
+    {
+        // Source of truth: Total Allocated payments
+        $totalPaid = $this->allocations()->sum('amount');
+        return max(0, $this->net_payable - $totalPaid);
+    }
 }
