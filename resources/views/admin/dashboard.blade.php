@@ -1,5 +1,7 @@
 @extends('layouts.admin')
 
+@section('title', 'Dashboard')
+
 @section('content')
 <div class="row g-4 mb-4">
     <!-- Today's Sales -->
@@ -9,7 +11,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <div class="text-muted small text-uppercase fw-bold">Today's Sales</div>
-                        <h3 class="mb-0 fw-bold">৳ 45,250.00</h3>
+                        <h3 class="mb-0 fw-bold">৳ {{ number_format($todaySales, 2) }}</h3>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="bg-primary bg-opacity-10 p-3 rounded text-primary">
@@ -28,7 +30,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <div class="text-muted small text-uppercase fw-bold">Total Due</div>
-                        <h3 class="mb-0 fw-bold text-danger">৳ 12,800.00</h3>
+                        <h3 class="mb-0 fw-bold text-danger">৳ {{ number_format($totalDue, 2) }}</h3>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="bg-danger bg-opacity-10 p-3 rounded text-danger">
@@ -47,7 +49,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <div class="text-muted small text-uppercase fw-bold">Total Customers</div>
-                        <h3 class="mb-0 fw-bold">1,240</h3>
+                        <h3 class="mb-0 fw-bold">{{ number_format($totalCustomers) }}</h3>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="bg-success bg-opacity-10 p-3 rounded text-success">
@@ -66,7 +68,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <div class="text-muted small text-uppercase fw-bold">Total Products</div>
-                        <h3 class="mb-0 fw-bold">850</h3>
+                        <h3 class="mb-0 fw-bold">{{ number_format($totalProducts) }}</h3>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="bg-info bg-opacity-10 p-3 rounded text-info">
@@ -85,7 +87,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <div class="text-muted small text-uppercase fw-bold">Low Stock Alert</div>
-                        <h3 class="mb-0 fw-bold text-warning">14</h3>
+                        <h3 class="mb-0 fw-bold text-warning">{{ $lowStockCount }}</h3>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="bg-warning bg-opacity-10 p-3 rounded text-warning">
@@ -104,7 +106,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <div class="text-muted small text-uppercase fw-bold">Monthly Sales</div>
-                        <h3 class="mb-0 fw-bold">৳ 1.2M</h3>
+                        <h3 class="mb-0 fw-bold">৳ {{ number_format($monthlySales, 2) }}</h3>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="bg-dark bg-opacity-10 p-3 rounded text-dark">
@@ -117,68 +119,90 @@
     </div>
 </div>
 
-<!-- Recent Transactions Table -->
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-clock-history me-2"></i> Recent Transactions</span>
-        <button class="btn btn-sm btn-primary">View All</button>
+<div class="row g-4">
+    <!-- Recent Transactions Table -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2"></i> Recent Transactions</span>
+                <a href="{{ route('reports.sales') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4">Invoice ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th class="text-end px-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentInvoices as $invoice)
+                            <tr>
+                                <td class="px-4 fw-medium">{{ $invoice->invoice_no }}</td>
+                                <td>{{ $invoice->customer->customer_name }}</td>
+                                <td>৳ {{ number_format($invoice->net_payable, 2) }}</td>
+                                <td>
+                                    @if($invoice->due_amount <= 0)
+                                        <span class="badge bg-success">Paid</span>
+                                    @elseif($invoice->received_amount > 0)
+                                        <span class="badge bg-warning text-dark">Partial</span>
+                                    @else
+                                        <span class="badge bg-danger">Due</span>
+                                    @endif
+                                </td>
+                                <td>{{ \Carbon\Carbon::parse($invoice->date)->format('d M Y') }}</td>
+                                <td class="text-end px-4">
+                                    <a href="{{ route('pos.print', $invoice->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No transactions yet.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="px-4">Invoice ID</th>
-                        <th>Customer</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th class="text-end px-4">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="px-4 fw-medium">#INV-20260401</td>
-                        <td>Rahim Ahmed</td>
-                        <td>৳ 1,500.00</td>
-                        <td><span class="badge bg-success">Paid</span></td>
-                        <td>14 Apr 2026</td>
-                        <td class="text-end px-4">
-                            <button class="btn btn-sm btn-outline-secondary">View</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 fw-medium">#INV-20260402</td>
-                        <td>Kamal Hossain</td>
-                        <td>৳ 2,800.00</td>
-                        <td><span class="badge bg-warning text-dark">Pending</span></td>
-                        <td>14 Apr 2026</td>
-                        <td class="text-end px-4">
-                            <button class="btn btn-sm btn-outline-secondary">View</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 fw-medium">#INV-20260403</td>
-                        <td>Modern Solutions</td>
-                        <td>৳ 12,500.00</td>
-                        <td><span class="badge bg-danger">Due</span></td>
-                        <td>13 Apr 2026</td>
-                        <td class="text-end px-4">
-                            <button class="btn btn-sm btn-outline-secondary">View</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 fw-medium">#INV-20260404</td>
-                        <td>Sattar Traders</td>
-                        <td>৳ 850.00</td>
-                        <td><span class="badge bg-success">Paid</span></td>
-                        <td>13 Apr 2026</td>
-                        <td class="text-end px-4">
-                            <button class="btn btn-sm btn-outline-secondary">View</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+
+    <!-- Low Stock Alerts -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Low Stock Items
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    @forelse($lowStockProducts as $product)
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">{{ $product->product_name }}</div>
+                            <small class="text-muted">{{ $product->product_id }}</small>
+                        </div>
+                        <span class="badge bg-danger rounded-pill">{{ $product->stock_quantity }} left</span>
+                    </div>
+                    @empty
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="bi bi-check-circle text-success fs-3"></i>
+                        <p class="mb-0 mt-2">All stock levels are healthy!</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+            @if($lowStockCount > 5)
+            <div class="card-footer text-center">
+                <a href="{{ route('reports.stock') }}" class="text-danger">View all {{ $lowStockCount }} items →</a>
+            </div>
+            @endif
         </div>
     </div>
 </div>

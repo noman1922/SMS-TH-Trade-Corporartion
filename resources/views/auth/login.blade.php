@@ -27,18 +27,6 @@
                         @enderror
                     </div>
 
-                    <div class="mb-4">
-                        <label for="role" class="form-label">Login As</label>
-                        <select name="role" id="role" class="form-select @error('role') is-invalid @enderror" required>
-                            <option value="" selected disabled>-- Select Role --</option>
-                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                            <option value="staff" {{ old('role') == 'staff' ? 'selected' : '' }}>Staff</option>
-                        </select>
-                        @error('role')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
                     <div class="d-grid">
                         <button type="submit" class="btn btn-dark">Login</button>
                     </div>

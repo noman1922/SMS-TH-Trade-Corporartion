@@ -11,7 +11,7 @@ Route::get('/', function () {
 });
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
@@ -30,6 +30,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     // Admin only stock actions
     Route::get('/stock/create', [App\Http\Controllers\Admin\StockController::class, 'create'])->name('stock.create');
     Route::post('/stock', [App\Http\Controllers\Admin\StockController::class, 'store'])->name('stock.store');
+});
+
+// Staff Dashboard
+Route::middleware(['auth', 'staff'])->prefix('staff')->group(function () {
+    Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
 });
 
 // Shared routes for Admin and Staff

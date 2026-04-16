@@ -20,18 +20,10 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
-            'role' => ['required', 'in:admin,staff'],
         ]);
 
         if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
             $user = Auth::user();
-
-            if ($user->role !== $credentials['role']) {
-                Auth::logout();
-                return back()->withErrors([
-                    'role' => 'The selected role does not match your account role.',
-                ])->onlyInput('email');
-            }
 
             $request->session()->regenerate();
 
