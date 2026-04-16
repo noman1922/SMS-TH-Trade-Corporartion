@@ -29,16 +29,18 @@ class Customer extends Model
      */
     public function getTotalPurchasedAttribute()
     {
-        return $this->invoices()->sum('net_payable');
+        return $this->invoices_avg_net_payable ? $this->invoices_sum_net_payable : ($this->invoices_sum_net_payable ?? $this->invoices()->sum('net_payable'));
     }
 
     public function getTotalPaidAttribute()
     {
-        return $this->payments()->sum('amount');
+        return $this->payments_avg_amount ? $this->payments_sum_amount : ($this->payments_sum_amount ?? $this->payments()->sum('amount'));
     }
 
     public function getCurrentDueAttribute()
     {
-        return ($this->previous_due + $this->total_purchased) - $this->total_paid;
+        $purchased = $this->invoices_sum_net_payable ?? $this->invoices()->sum('net_payable');
+        $paid = $this->payments_sum_amount ?? $this->payments()->sum('amount');
+        return ($this->previous_due + $purchased) - $paid;
     }
 }

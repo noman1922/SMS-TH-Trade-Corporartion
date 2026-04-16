@@ -11,6 +11,7 @@ use App\Models\PaymentAllocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Exception;
 
@@ -19,16 +20,28 @@ class PosController extends Controller
     public function index()
     {
         $products = Product::where('stock_quantity', '>', 0)->get();
-        $customers = Customer::all();
+        $customers = Customer::withSum('invoices', 'net_payable')
+            ->withSum('payments', 'amount')
+            ->orderBy('customer_name', 'asc')
+            ->get();
         $invoice_no = 'INV-' . strtoupper(uniqid());
         
         return view('pos.index', compact('products', 'customers', 'invoice_no'));
     }
 
+    /**
+     * Return only safe fields — cost_price is never exposed to staff.
+     */
     public function getProductDetails($id)
     {
         $product = Product::findOrFail($id);
-        return response()->json($product);
+        return response()->json([
+            'id' => $product->id,
+            'product_name' => $product->product_name,
+            'product_id' => $product->product_id,
+            'selling_price' => $product->selling_price,
+            'stock_quantity' => $product->stock_quantity,
+        ]);
     }
 
     public function store(Request $request)
@@ -39,8 +52,8 @@ class PosController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'discount_percent' => 'nullable|numeric|min:0|max:50',
-            'vat_percent' => 'nullable|numeric|min:0',
-            'ait_percent' => 'nullable|numeric|min:0',
+            'vat_percent' => 'nullable|numeric|min:0|max:100',
+            'ait_percent' => 'nullable|numeric|min:0|max:100',
             'extra_charge' => 'nullable|numeric|min:0',
             'received_amount' => 'required|numeric|min:0',
             'date' => 'required|date',
@@ -48,7 +61,7 @@ class PosController extends Controller
 
         try {
             return DB::transaction(function () use ($request) {
-                $customer = \App\Models\Customer::findOrFail($request->customer_id);
+                $customer = Customer::findOrFail($request->customer_id);
                 $sub_total = 0;
                 $items_to_save = [];
                 $stock_history_records = [];
@@ -62,6 +75,7 @@ class PosController extends Controller
                         throw new Exception("Insufficient stock for product: {$product->product_name} (Available: {$product->stock_quantity})");
                     }
 
+                    // 3. Use server-side price (never trust frontend price)
                     $item_total = $product->selling_price * $itemData['quantity'];
                     $sub_total += $item_total;
 
@@ -73,23 +87,24 @@ class PosController extends Controller
                         'total_price' => $item_total,
                     ];
 
-                    // 3. Prepare stock history data
+                    // 4. Prepare stock history data
                     $stock_history_records[] = [
                         'product' => $product,
                         'quantity' => $itemData['quantity']
                     ];
                 }
 
+                // 5. Recalculate all totals server-side (never trust frontend)
                 $discount = ($sub_total * ($request->discount_percent ?? 0)) / 100;
                 $vat = ($sub_total * ($request->vat_percent ?? 0)) / 100;
                 $ait = ($sub_total * ($request->ait_percent ?? 0)) / 100;
                 $extra = $request->extra_charge ?? 0;
 
                 $net_payable = ($sub_total - $discount) + $vat + $ait + $extra;
-                $received = $request->received_amount;
+                $received = min($request->received_amount, $net_payable); // Prevent overpayment
                 $due = max(0, $net_payable - $received);
 
-                // 4. Create Invoice
+                // 6. Create Invoice
                 $invoice = Invoice::create([
                     'invoice_no' => 'INV-' . strtoupper(uniqid()),
                     'customer_id' => $request->customer_id,
@@ -105,7 +120,7 @@ class PosController extends Controller
                     'date' => $request->date,
                 ]);
 
-                // 4.1. Record Initial Payment
+                // 6.1. Record Initial Payment
                 if ($received > 0) {
                     $payment = Payment::create([
                         'customer_id' => $request->customer_id,
@@ -125,7 +140,7 @@ class PosController extends Controller
                     ]);
                 }
 
-                // 5. Save Items, Reduce Stock, and Record History
+                // 7. Save Items, Reduce Stock, and Record History
                 foreach ($items_to_save as $index => $item) {
                     $invoice->items()->create($item);
                     
@@ -148,6 +163,8 @@ class PosController extends Controller
                     ]);
                 }
 
+                Log::info('Invoice created', ['invoice_id' => $invoice->id, 'user_id' => Auth::id(), 'total' => $net_payable]);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Invoice created successfully',
@@ -155,6 +172,7 @@ class PosController extends Controller
                 ]);
             });
         } catch (Exception $e) {
+            Log::error('POS Invoice creation failed', ['error' => $e->getMessage(), 'user_id' => Auth::id()]);
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()

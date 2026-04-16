@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
 <div class="row">
@@ -17,7 +17,7 @@
                         <select id="customer_select" class="form-select">
                             <option value="">-- Choose Customer --</option>
                             @foreach($customers as $customer)
-                                <option value="{{ $customer->id }}" data-mobile="{{ $customer->mobile }}" data-address="{{ $customer->address }}">{{ $customer->name }}</option>
+                                <option value="{{ $customer->id }}" data-mobile="{{ $customer->mobile }}" data-address="{{ $customer->address }}" data-due="{{ $customer->current_due }}">{{ $customer->customer_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -38,7 +38,7 @@
                         <select id="product_select" class="form-select">
                             <option value="">-- Search Product --</option>
                             @foreach($products as $product)
-                                <option value="{{ $product->id }}">[{{ $product->sku }}] {{ $product->name }} (Stock: {{ $product->stock }})</option>
+                                <option value="{{ $product->id }}">[{{ $product->product_id }}] {{ $product->product_name }} (Stock: {{ $product->stock_quantity }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -101,10 +101,21 @@
                     <input type="number" id="extra_charge" class="form-control form-control-sm" value="0" min="0">
                 </div>
                 <hr>
-                <div class="h4 mb-4 d-flex justify-content-between text-primary">
-                    <span>Payable:</span>
-                    <strong id="summary_net">৳ 0.00</strong>
+                <div class="mb-3 d-flex justify-content-between text-secondary fw-bold">
+                    <span>Current Bill:</span>
+                    <strong id="summary_current_bill">৳ 0.00</strong>
                 </div>
+                
+                <div class="mb-3 d-flex justify-content-between text-warning fw-bold small border p-2 rounded bg-white">
+                    <span>Previous Due:</span>
+                    <strong id="summary_prev_due">৳ 0.00</strong>
+                </div>
+                
+                <div class="h4 mb-3 d-flex justify-content-between text-primary border-top pt-2">
+                    <span>Total Payable:</span>
+                    <strong id="summary_total_payable">৳ 0.00</strong>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label text-success fw-bold">Received Amount (৳)</label>
                     <input type="number" id="received_amount" class="form-control border-success" value="0" min="0">
@@ -138,9 +149,16 @@
                     <strong>Mobile:</strong> ${option.data('mobile')}<br>
                     <strong>Address:</strong> ${option.data('address')}
                 `);
+                let due = parseFloat(option.data('due')) || 0;
+                $('#summary_prev_due').text(`৳ ${due.toFixed(2)}`);
             } else {
                 $('#customer_details').text('Select a customer to see details...');
+                $('#summary_prev_due').text(`৳ 0.00`);
             }
+            
+            // Trigger recalculation of totals
+            let subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            updateSummary(subtotal);
         });
 
         // Add Item
@@ -161,19 +179,19 @@
                 return;
             }
 
-            // Fetch details from server (Security: get real price)
+            // Fetch details from server (Security: get real price from backend)
             $.get(`{{ url('/pos/product') }}/${productId}`, function(product) {
-                if (product.stock < qty) {
-                    Swal.fire('Low Stock', `Only ${product.stock} items available`, 'warning');
+                if (product.stock_quantity < qty) {
+                    Swal.fire('Low Stock', `Only ${product.stock_quantity} items available`, 'warning');
                     return;
                 }
 
                 items.push({
                     product_id: product.id,
-                    name: product.name,
+                    name: product.product_name,
                     quantity: qty,
-                    price: product.base_price,
-                    total: product.base_price * qty
+                    price: product.selling_price,
+                    total: product.selling_price * qty
                 });
                 renderTable();
             });
@@ -198,7 +216,7 @@
                         <td>${index + 1}</td>
                         <td>${item.name}</td>
                         <td>${item.quantity}</td>
-                        <td>৳ ${item.price}</td>
+                        <td>৳ ${parseFloat(item.price).toFixed(2)}</td>
                         <td>৳ ${total.toFixed(2)}</td>
                         <td class="text-center">
                             <button class="btn btn-danger btn-sm remove-item" data-index="${index}">×</button>
@@ -218,15 +236,24 @@
             let extra = parseFloat($('#extra_charge').val()) || 0;
             let received = parseFloat($('#received_amount').val()) || 0;
 
+            let prevDue = 0;
+            let selectedOption = $('#customer_select').find('option:selected');
+            if (selectedOption.val()) {
+                prevDue = parseFloat(selectedOption.data('due')) || 0;
+            }
+
             let discount = (subtotal * discP) / 100;
             let vat = (subtotal * vatP) / 100;
             let ait = (subtotal * aitP) / 100;
 
-            let net = (subtotal - discount) + vat + ait + extra;
-            let due = Math.max(0, net - received);
+            let currentBill = (subtotal - discount) + vat + ait + extra;
+            let totalPayable = currentBill + prevDue;
+            
+            let due = Math.max(0, totalPayable - received);
 
             $('#summary_subtotal').text(`৳ ${subtotal.toFixed(2)}`);
-            $('#summary_net').text(`৳ ${net.toFixed(2)}`);
+            $('#summary_current_bill').text(`৳ ${currentBill.toFixed(2)}`);
+            $('#summary_total_payable').text(`৳ ${totalPayable.toFixed(2)}`);
             $('#summary_due').text(`৳ ${due.toFixed(2)}`);
         }
 
