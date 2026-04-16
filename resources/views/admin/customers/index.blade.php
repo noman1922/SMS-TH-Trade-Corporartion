@@ -1,5 +1,7 @@
 @extends('layouts.admin')
 
+@section('title', 'Customers')
+
 @section('content')
 <div class="container-fluid">
     <div class="row mb-4">
@@ -57,9 +59,9 @@
                                 <td><span class="badge bg-secondary">{{ $customer->invoices_count }}</span></td>
                                 <td>
                                     @if($customer->current_due > 0)
-                                        <span class="text-danger fw-bold">${{ number_format($customer->current_due, 2) }}</span>
+                                        <span class="text-danger fw-bold">৳ {{ number_format($customer->current_due, 2) }}</span>
                                     @else
-                                        <span class="text-success fw-bold">$0.00</span>
+                                        <span class="text-success fw-bold">৳ 0.00</span>
                                     @endif
                                 </td>
                                 <td class="text-end pe-3">

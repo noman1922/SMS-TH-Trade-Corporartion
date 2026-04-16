@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Http\Requests\Admin\CustomerRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class CustomerController extends Controller
@@ -24,6 +25,8 @@ class CustomerController extends Controller
                              ->orWhere('mobile', 'like', "%{$search}%");
             })
             ->withCount('invoices')
+            ->withSum('invoices', 'net_payable')
+            ->withSum('payments', 'amount')
             ->orderBy('customer_name', 'asc')
             ->paginate(10)
             ->withQueryString();
@@ -52,7 +55,8 @@ class CustomerController extends Controller
             return redirect()->route('customers.index')
                 ->with('success', 'Customer created successfully.');
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error creating customer: ' . $e->getMessage());
+            Log::error('Customer creation failed', ['error' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Error creating customer. Please try again.');
         }
     }
 
@@ -92,7 +96,8 @@ class CustomerController extends Controller
             return redirect()->route('customers.index')
                 ->with('success', 'Customer updated successfully.');
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error updating customer: ' . $e->getMessage());
+            Log::error('Customer update failed', ['customer_id' => $customer->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Error updating customer. Please try again.');
         }
     }
 
@@ -116,7 +121,8 @@ class CustomerController extends Controller
             return redirect()->route('customers.index')
                 ->with('success', 'Customer deleted successfully.');
         } catch (Exception $e) {
-            return back()->with('error', 'Error deleting customer: ' . $e->getMessage());
+            Log::error('Customer deletion failed', ['customer_id' => $customer->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Error deleting customer. Please try again.');
         }
     }
 }

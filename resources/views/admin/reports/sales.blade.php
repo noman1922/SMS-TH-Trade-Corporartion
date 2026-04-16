@@ -1,5 +1,7 @@
 @extends('layouts.admin')
 
+@section('title', 'Sales Report')
+
 @section('content')
 <div class="container-fluid">
     <div class="row mb-4">
@@ -48,7 +50,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-info">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Total Sales</h6>
-                    <h3 class="mb-0 fw-bold">${{ number_format($summary['total_amount'], 2) }}</h3>
+                    <h3 class="mb-0 fw-bold">৳ {{ number_format($summary['total_amount'], 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -56,7 +58,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-success">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Total Received</h6>
-                    <h3 class="mb-0 fw-bold text-success">${{ number_format($summary['total_received'], 2) }}</h3>
+                    <h3 class="mb-0 fw-bold text-success">৳ {{ number_format($summary['total_received'], 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -64,7 +66,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-danger">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Total Due</h6>
-                    <h3 class="mb-0 fw-bold text-danger">${{ number_format($summary['total_due'], 2) }}</h3>
+                    <h3 class="mb-0 fw-bold text-danger">৳ {{ number_format($summary['total_due'], 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -91,9 +93,9 @@
                                 <td class="ps-3 fw-bold">{{ $invoice->invoice_no }}</td>
                                 <td>{{ \Carbon\Carbon::parse($invoice->date)->format('M d, Y') }}</td>
                                 <td>{{ $invoice->customer->customer_name }}</td>
-                                <td>${{ number_format($invoice->net_payable, 2) }}</td>
-                                <td class="text-success">${{ number_format($invoice->received_amount, 2) }}</td>
-                                <td class="text-danger fw-bold">${{ number_format($invoice->due_amount, 2) }}</td>
+                                <td>৳ {{ number_format($invoice->net_payable, 2) }}</td>
+                                <td class="text-success">৳ {{ number_format($invoice->received_amount, 2) }}</td>
+                                <td class="text-danger fw-bold">৳ {{ number_format($invoice->due_amount, 2) }}</td>
                             </tr>
                         @empty
                             <tr>

@@ -1,5 +1,7 @@
 @extends('layouts.admin')
 
+@section('title', 'Profit Report')
+
 @section('content')
 <div class="container-fluid">
     <div class="row mb-4">
@@ -40,7 +42,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-info">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Gross Revenue</h6>
-                    <h3 class="mb-0 fw-bold">${{ number_format($profitData->total_sales, 2) }}</h3>
+                    <h3 class="mb-0 fw-bold">৳ {{ number_format($profitData->total_sales, 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -48,7 +50,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-secondary">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Total Cost of Goods</h6>
-                    <h3 class="mb-0 fw-bold">${{ number_format($profitData->total_cost, 2) }}</h3>
+                    <h3 class="mb-0 fw-bold">৳ {{ number_format($profitData->total_cost, 2) }}</h3>
                 </div>
             </div>
         </div>
@@ -56,7 +58,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-success">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Gross Profit</h6>
-                    <h3 class="mb-0 fw-bold text-success">${{ number_format($profitData->gross_profit, 2) }}</h3>
+                    <h3 class="mb-0 fw-bold text-success">৳ {{ number_format($profitData->gross_profit, 2) }}</h3>
                     @if($profitData->total_sales > 0)
                         <small class="text-muted">Margin: {{ number_format(($profitData->gross_profit / $profitData->total_sales) * 100, 1) }}%</small>
                     @endif
@@ -90,7 +92,7 @@
                         @foreach($monthlyProfit as $item)
                             <tr>
                                 <td class="ps-3 fw-bold">{{ $months[$item->month] }}</td>
-                                <td class="text-end pe-3 text-success fw-bold">${{ number_format($item->profit, 2) }}</td>
+                                <td class="text-end pe-3 text-success fw-bold">৳ {{ number_format($item->profit, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

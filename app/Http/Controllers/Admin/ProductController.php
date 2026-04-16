@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Http\Requests\Admin\ProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class ProductController extends Controller
@@ -51,7 +52,8 @@ class ProductController extends Controller
             return redirect()->route('products.index')
                 ->with('success', 'Product created successfully.');
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error creating product: ' . $e->getMessage());
+            Log::error('Product creation failed', ['error' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Error creating product. Please try again.');
         }
     }
 
@@ -76,7 +78,8 @@ class ProductController extends Controller
             return redirect()->route('products.index')
                 ->with('success', 'Product updated successfully.');
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error updating product: ' . $e->getMessage());
+            Log::error('Product update failed', ['product_id' => $product->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Error updating product. Please try again.');
         }
     }
 
@@ -90,7 +93,8 @@ class ProductController extends Controller
             return redirect()->route('products.index')
                 ->with('success', 'Product deleted successfully.');
         } catch (Exception $e) {
-            return back()->with('error', 'Error deleting product: ' . $e->getMessage());
+            Log::error('Product deletion failed', ['product_id' => $product->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Error deleting product. Please try again.');
         }
     }
 }

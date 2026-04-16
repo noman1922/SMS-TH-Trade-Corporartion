@@ -1,5 +1,7 @@
 @extends('layouts.admin')
 
+@section('title', 'Stock Report')
+
 @section('content')
 <div class="container-fluid">
     <div class="row mb-4">
@@ -19,8 +21,8 @@
             <div class="card shadow-sm border-0 border-start border-4 border-primary">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Total Stock Value (at Cost)</h6>
-                    <h2 class="mb-0 fw-bold">${{ number_format($totalValuation, 2) }}</h2>
-                    <small class="text-muted">Based on cost_price * stock_quantity</small>
+                    <h2 class="mb-0 fw-bold">৳ {{ number_format($totalValuation, 2) }}</h2>
+                    <small class="text-muted">Based on cost_price × stock_quantity</small>
                 </div>
             </div>
         </div>
@@ -28,7 +30,7 @@
             <div class="card shadow-sm border-0 border-start border-4 border-danger">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Low Stock Items</h6>
-                    <h2 class="mb-0 fw-bold text-danger">{{ $lowStockProducts->count() }}</h2>
+                    <h2 class="mb-0 fw-bold text-danger">{{ $lowStockCount }}</h2>
                     <small class="text-muted">Products with < 5 units remaining</small>
                 </div>
             </div>
@@ -42,7 +44,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-striped table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Product Name</th>
@@ -57,9 +59,9 @@
                             <tr class="{{ $product->stock_quantity < 5 ? 'table-danger-subtle' : '' }}">
                                 <td class="ps-3 fw-medium">{{ $product->product_name }}</td>
                                 <td>{{ $product->stock_quantity }}</td>
-                                <td>${{ number_format($product->cost_price, 2) }}</td>
+                                <td>৳ {{ number_format($product->cost_price, 2) }}</td>
                                 <td class="fw-bold text-primary">
-                                    ${{ number_format($product->stock_quantity * $product->cost_price, 2) }}
+                                    ৳ {{ number_format($product->stock_quantity * $product->cost_price, 2) }}
                                 </td>
                                 <td class="text-end pe-3">
                                     @if($product->stock_quantity == 0)
@@ -76,6 +78,11 @@
                 </table>
             </div>
         </div>
+        @if($products->hasPages())
+            <div class="card-footer bg-white d-print-none">
+                {{ $products->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

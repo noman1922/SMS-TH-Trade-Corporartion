@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\StockRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class StockController extends Controller
@@ -76,7 +77,8 @@ class StockController extends Controller
             return redirect()->route('stock.index')
                 ->with('success', 'Stock updated successfully.');
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Error updating stock: ' . $e->getMessage());
+            Log::error('Stock update failed', ['error' => $e->getMessage(), 'user_id' => Auth::id()]);
+            return back()->withInput()->with('error', 'Error updating stock. Please try again.');
         }
     }
 }

@@ -30,4 +30,15 @@ class PaymentRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:500'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'amount.required' => 'Payment amount is required.',
+            'amount.min' => 'Payment amount must be greater than zero.',
+            'customer_id.required' => 'Please select a customer.',
+            'customer_id.exists' => 'Selected customer is invalid.',
+            'payment_method.in' => 'Invalid payment method selected.',
+        ];
+    }
 }

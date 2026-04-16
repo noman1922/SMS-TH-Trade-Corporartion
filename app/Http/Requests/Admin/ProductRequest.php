@@ -34,9 +34,21 @@ class ProductRequest extends FormRequest
             ],
             'model_no' => ['nullable', 'string', 'max:100'],
             'cost_price' => ['required', 'numeric', 'min:0'],
-            'selling_price' => ['required', 'numeric', 'min:0'],
+            'selling_price' => ['required', 'numeric', 'min:0', 'gte:cost_price'],
             'stock_quantity' => ['required', 'integer', 'min:0'],
             'category' => ['nullable', 'string', 'max:100'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'product_name.required' => 'Product name is required.',
+            'product_id.required' => 'Product ID is required.',
+            'product_id.unique' => 'This Product ID already exists.',
+            'cost_price.min' => 'Cost price cannot be negative.',
+            'selling_price.gte' => 'Selling price must be greater than or equal to cost price.',
+            'stock_quantity.min' => 'Stock quantity cannot be negative.',
         ];
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\PaymentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class PaymentController extends Controller
@@ -67,7 +68,7 @@ class PaymentController extends Controller
                     $invoice = Invoice::lockForUpdate()->findOrFail($invoiceId);
                     
                     if ($amount > $invoice->remaining_due) {
-                        throw new Exception("Overpayment detected! Remaining due is only $" . number_format($invoice->remaining_due, 2));
+                        throw new Exception("Overpayment detected! Remaining due is only ৳" . number_format($invoice->remaining_due, 2));
                     }
 
                     $payment = Payment::create([
@@ -96,7 +97,7 @@ class PaymentController extends Controller
                     $customer = Customer::lockForUpdate()->findOrFail($customerId);
                     
                     if ($amount > $customer->current_due) {
-                         throw new Exception("Payment exceeds total customer due! Total due is $" . number_format($customer->current_due, 2));
+                         throw new Exception("Payment exceeds total customer due! Total due is ৳" . number_format($customer->current_due, 2));
                     }
 
                     $payment = Payment::create([
@@ -111,10 +112,13 @@ class PaymentController extends Controller
                     ]);
                 }
 
+                Log::info('Payment recorded', ['payment_id' => $payment->id, 'amount' => $amount, 'user_id' => Auth::id()]);
+
                 return redirect()->route('payments.index')
-                    ->with('success', 'Payment of $' . number_format($amount, 2) . ' recorded successfully.');
+                    ->with('success', 'Payment of ৳' . number_format($amount, 2) . ' recorded successfully.');
             });
         } catch (Exception $e) {
+            Log::error('Payment creation failed', ['error' => $e->getMessage(), 'user_id' => Auth::id()]);
             return back()->withInput()->with('error', $e->getMessage());
         }
     }
@@ -134,11 +138,15 @@ class PaymentController extends Controller
     public function destroy(Payment $payment)
     {
         if (auth()->user()->role !== 'admin') {
-            return back()->with('error', 'Unauthorized!');
+            return back()->with('error', 'Unauthorized! Only admins can delete payments.');
         }
 
         try {
             DB::transaction(function () use ($payment) {
+                // 1. Delete allocations first (fix orphan records)
+                $payment->allocations()->delete();
+
+                // 2. Reverse invoice amounts if linked
                 if ($payment->invoice_id) {
                     $invoice = Invoice::lockForUpdate()->find($payment->invoice_id);
                     if ($invoice) {
@@ -146,12 +154,17 @@ class PaymentController extends Controller
                         $invoice->increment('due_amount', $payment->amount);
                     }
                 }
+
+                Log::info('Payment deleted', ['payment_id' => $payment->id, 'amount' => $payment->amount, 'user_id' => Auth::id()]);
+
+                // 3. Delete the payment
                 $payment->delete();
             });
 
             return back()->with('success', 'Payment record deleted.');
         } catch (Exception $e) {
-            return back()->with('error', 'Error deleting payment.');
+            Log::error('Payment deletion failed', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Error deleting payment. Please try again.');
         }
     }
 }
