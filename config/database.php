@@ -96,7 +96,12 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            // SUPABASE SPEED FIX
+            // Keep SSL explicit for Supabase and allow production to opt into PDO persistent connections.
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false),
+            ]) : [],
         ],
 
         'sqlsrv' => [
