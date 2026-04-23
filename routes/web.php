@@ -6,9 +6,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Staff\StaffDashboardController;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// PERFORMANCE OPTIMIZATION
+// Route cache compatible redirect.
+Route::redirect('/', '/login');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -35,16 +35,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 // Staff Dashboard
 Route::middleware(['auth', 'staff'])->prefix('staff')->group(function () {
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
+    // STAFF DASHBOARD FIX
+    Route::get('/sales', [StaffDashboardController::class, 'sales'])->name('staff.sales');
 });
 
 // Shared routes for Admin and Staff
 Route::middleware(['auth', 'staff'])->prefix('admin')->group(function () {
     Route::resource('customers', App\Http\Controllers\Admin\CustomerController::class);
     Route::get('/stock', [App\Http\Controllers\Admin\StockController::class, 'index'])->name('stock.index');
+    // ROW PRINT FIX
+    Route::get('/invoices/{invoice}/print', [App\Http\Controllers\PosController::class, 'print'])->name('invoice.print');
+    Route::get('/customers/{customer}/due-receipt', [App\Http\Controllers\Admin\ReportsController::class, 'customerDueReceipt'])->name('receipt.print');
     
     // Payments / Due Management
     Route::resource('payments', App\Http\Controllers\Admin\PaymentController::class);
-    Route::get('/payments/{id}/receipt', [App\Http\Controllers\Admin\PaymentController::class, 'receipt'])->name('payments.receipt');
+    // PAYMENT RECEIPT SYSTEM
+    Route::get('/payments/{payment}/receipt', [App\Http\Controllers\Admin\PaymentController::class, 'receipt'])->name('payment.receipt');
 });
 
 use App\Http\Controllers\PosController;
@@ -53,5 +59,5 @@ Route::middleware(['auth', 'staff'])->prefix('pos')->group(function () {
     Route::get('/', [PosController::class, 'index'])->name('pos.index');
     Route::post('/store', [PosController::class, 'store'])->name('pos.store');
     Route::get('/product/{id}', [PosController::class, 'getProductDetails'])->name('pos.productDetails');
-    Route::get('/print/{id}', [PosController::class, 'print'])->name('pos.print');
+    Route::get('/print/{invoice}', [PosController::class, 'print'])->name('pos.print');
 });
