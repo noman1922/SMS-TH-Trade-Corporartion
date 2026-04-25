@@ -9,7 +9,8 @@
                 <div class="card bg-info text-white mb-4">
                     <div class="card-body">
                         <h5>My Bill Entries</h5>
-                        <p class="display-6">45</p>
+                        {{-- // STAFF DASHBOARD FIX --}}
+                        <p class="display-6">{{ $myBillEntries }}</p>
                     </div>
                 </div>
             </div>
@@ -17,7 +18,8 @@
                 <div class="card bg-secondary text-white mb-4">
                     <div class="card-body">
                         <h5>Items in Possession</h5>
-                        <p class="display-6">5</p>
+                        {{-- // STAFF DASHBOARD FIX --}}
+                        <p class="display-6">{{ $itemsInPossession }}</p>
                     </div>
                 </div>
             </div>
@@ -30,9 +32,10 @@
             <div class="card-body">
                 <p>Welcome to the staff portal. You can manage day-to-day billing and check stock availability here.</p>
                 <div class="list-group">
-                    <a href="#" class="list-group-item list-group-item-action">New Billing Entry</a>
-                    <a href="#" class="list-group-item list-group-item-action">Check Stock Availability</a>
-                    <a href="#" class="list-group-item list-group-item-action">View My Sales</a>
+                    {{-- // STAFF DASHBOARD FIX --}}
+                    <a href="{{ route('pos.index') }}" class="list-group-item list-group-item-action">New Billing Entry</a>
+                    <a href="{{ route('stock.index') }}" class="list-group-item list-group-item-action">Check Stock Availability</a>
+                    <a href="{{ route('staff.sales') }}" class="list-group-item list-group-item-action">View My Sales</a>
                 </div>
             </div>
         </div>
