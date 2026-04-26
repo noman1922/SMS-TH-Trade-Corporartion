@@ -183,6 +183,20 @@
             z-index: 1035;
         }
 
+        /* RESPONSIVENESS ROLLBACK */
+        /* REMOVE OVERLAY SYSTEM */
+        /* KEEP SIMPLE BUTTON LOADER */
+        .ux-toast-stack {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 2100;
+        }
+        .ux-disabled {
+            pointer-events: none;
+            opacity: 0.72;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 991.98px) {
             .sidebar {
@@ -260,9 +274,107 @@
         </div>
     </div>
 
+    <div class="ux-toast-stack toast-container" id="toastContainer"></div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // RESPONSIVENESS ROLLBACK
+        // REMOVE OVERLAY SYSTEM
+        // LOADING STATE FIX
+        window.THTradeUX = (function() {
+            const toastContainer = document.getElementById('toastContainer');
+            const buttonText = new WeakMap();
+            let debounceTimer = null;
+
+            function toast(message, type = 'success') {
+                if (!toastContainer || !message) return;
+                const bg = type === 'error' ? 'text-bg-danger' : (type === 'warning' ? 'text-bg-warning' : 'text-bg-success');
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast align-items-center ${bg} border-0`;
+                toastEl.setAttribute('role', 'status');
+                toastEl.setAttribute('aria-live', 'polite');
+                toastEl.setAttribute('aria-atomic', 'true');
+                toastEl.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                toastContainer.appendChild(toastEl);
+                const instance = new bootstrap.Toast(toastEl, { delay: 3500 });
+                toastEl.addEventListener('hidden.bs.toast', function() {
+                    toastEl.remove();
+                });
+                instance.show();
+            }
+
+            function setButtonLoading(button, text = 'Processing...') {
+                if (!button || button.disabled) return;
+                buttonText.set(button, button.innerHTML);
+                button.disabled = true;
+                button.classList.add('ux-disabled');
+                button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>${text}`;
+            }
+
+            function resetButton(button) {
+                if (!button || !buttonText.has(button)) return;
+                button.innerHTML = buttonText.get(button);
+                button.disabled = false;
+                button.classList.remove('ux-disabled');
+                buttonText.delete(button);
+            }
+
+            function getLoadingText(button, form) {
+                if (button?.dataset.loadingText) return button.dataset.loadingText;
+                if (form?.dataset.loadingText) return form.dataset.loadingText;
+                const label = (button?.textContent || '').trim().toLowerCase();
+                if (label.includes('generate') || label.includes('view ledger') || label.includes('analyze')) return 'Generating...';
+                if (label.includes('save') || label.includes('update')) return 'Saving...';
+                if (label.includes('collect') || label.includes('record')) return 'Processing...';
+                if (label.includes('search')) return 'Searching...';
+                return 'Processing...';
+            }
+
+            function bindDebouncedSearch() {
+                document.querySelectorAll('form.js-debounce-search input[name="search"]').forEach(function(input) {
+                    const form = input.form;
+                    let lastValue = input.value;
+                    input.addEventListener('input', function() {
+                        window.clearTimeout(debounceTimer);
+                        debounceTimer = window.setTimeout(function() {
+                            if (input.value === lastValue) return;
+                            lastValue = input.value;
+                            form.requestSubmit();
+                        }, Number(form.dataset.debounce || 400));
+                    });
+                });
+            }
+
+            function bindForms() {
+                document.addEventListener('submit', function(event) {
+                    const form = event.target;
+                    if (!(form instanceof HTMLFormElement) || form.dataset.noLoading === 'true') return;
+                    if (!form.checkValidity()) return;
+
+                    const submitter = event.submitter || form.querySelector('[type="submit"]');
+                    const text = getLoadingText(submitter, form);
+                    setButtonLoading(submitter, text);
+
+                    // KEEP SIMPLE BUTTON LOADER
+                });
+            }
+
+            bindDebouncedSearch();
+            bindForms();
+
+            return {
+                toast,
+                setButtonLoading,
+                resetButton
+            };
+        })();
+
         // Mobile sidebar toggle
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
@@ -288,6 +400,14 @@
                 if (bsAlert) bsAlert.close();
             }, 5000);
         });
+
+        // TOAST NOTIFICATIONS
+        @if(session('success'))
+            window.THTradeUX.toast(@json(session('success')), 'success');
+        @endif
+        @if(session('error'))
+            window.THTradeUX.toast(@json(session('error')), 'error');
+        @endif
     </script>
     @yield('scripts')
 </body>
