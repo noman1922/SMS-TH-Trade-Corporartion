@@ -47,7 +47,7 @@
                         <input type="number" id="product_qty" class="form-control" value="1" min="1">
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                        <button type="button" id="add_item_btn" class="btn btn-primary w-100">Add Item</button>
+                        <button type="button" id="add_item_btn" class="btn btn-primary w-100" data-loading-text="Adding...">Add Item</button>
                     </div>
                 </div>
 
@@ -86,19 +86,23 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label small">Discount (%)</label>
-                    <input type="number" id="discount_percent" class="form-control form-control-sm" value="0" min="0" max="50">
+                    {{-- // POS INPUT UX FIX --}}
+                    <input type="number" id="discount_percent" class="form-control form-control-sm" min="0" max="50">
                 </div>
                 <div class="mb-3">
                     <label class="form-label small">VAT (%)</label>
-                    <input type="number" id="vat_percent" class="form-control form-control-sm" value="0" min="0">
+                    {{-- // POS INPUT UX FIX --}}
+                    <input type="number" id="vat_percent" class="form-control form-control-sm" min="0">
                 </div>
                 <div class="mb-3">
                     <label class="form-label small">AIT (%)</label>
-                    <input type="number" id="ait_percent" class="form-control form-control-sm" value="0" min="0">
+                    {{-- // POS INPUT UX FIX --}}
+                    <input type="number" id="ait_percent" class="form-control form-control-sm" min="0">
                 </div>
                 <div class="mb-3">
                     <label class="form-label small">Extra Charge (৳)</label>
-                    <input type="number" id="extra_charge" class="form-control form-control-sm" value="0" min="0">
+                    {{-- // POS INPUT UX FIX --}}
+                    <input type="number" id="extra_charge" class="form-control form-control-sm" min="0">
                 </div>
                 <hr>
                 <div class="mb-3 d-flex justify-content-between text-secondary fw-bold">
@@ -126,7 +130,7 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button type="button" id="save_invoice_btn" class="btn btn-success btn-lg">Save Invoice</button>
+                    <button type="button" id="save_invoice_btn" class="btn btn-success btn-lg" data-loading-text="Processing...">Save Invoice</button>
                     <button type="button" id="clear_all_btn" class="btn btn-outline-danger shadow-sm">Clear All</button>
                 </div>
             </div>
@@ -163,6 +167,8 @@
 
         // Add Item
         $('#add_item_btn').click(function() {
+            // LOADING STATE FIX
+            const addButton = this;
             let productId = $('#product_select').val();
             let qty = parseInt($('#product_qty').val());
 
@@ -171,11 +177,14 @@
                 return;
             }
 
+            window.THTradeUX.setButtonLoading(addButton, 'Adding...');
+
             // Check if already in list
             let existing = items.find(i => i.product_id == productId);
             if (existing) {
                 existing.quantity += qty;
                 renderTable();
+                window.THTradeUX.resetButton(addButton);
                 return;
             }
 
@@ -194,6 +203,10 @@
                     total: product.selling_price * qty
                 });
                 renderTable();
+            }).fail(function() {
+                Swal.fire('Error', 'Could not load product details. Please try again.', 'error');
+            }).always(function() {
+                window.THTradeUX.resetButton(addButton);
             });
         });
 
@@ -230,26 +243,28 @@
 
         // Summary Calculations
         function updateSummary(subtotal) {
-            let discP = parseFloat($('#discount_percent').val()) || 0;
-            let vatP = parseFloat($('#vat_percent').val()) || 0;
-            let aitP = parseFloat($('#ait_percent').val()) || 0;
-            let extra = parseFloat($('#extra_charge').val()) || 0;
-            let received = parseFloat($('#received_amount').val()) || 0;
+            // POS INPUT UX FIX
+            // FINANCIAL CALCULATION FIX
+            let discP = parseFloat($('#discount_percent').val() || 0) || 0;
+            let vatP = parseFloat($('#vat_percent').val() || 0) || 0;
+            let aitP = parseFloat($('#ait_percent').val() || 0) || 0;
+            let extra = parseFloat($('#extra_charge').val() || 0) || 0;
+            let received = parseFloat($('#received_amount').val() || 0) || 0;
 
             let prevDue = 0;
             let selectedOption = $('#customer_select').find('option:selected');
             if (selectedOption.val()) {
-                prevDue = parseFloat(selectedOption.data('due')) || 0;
+                prevDue = parseFloat(selectedOption.data('due') || 0) || 0;
             }
 
-            let discount = (subtotal * discP) / 100;
-            let vat = (subtotal * vatP) / 100;
-            let ait = (subtotal * aitP) / 100;
+            let discount = parseFloat(((subtotal * discP) / 100).toFixed(2));
+            let vat = parseFloat(((subtotal * vatP) / 100).toFixed(2));
+            let ait = parseFloat(((subtotal * aitP) / 100).toFixed(2));
 
-            let currentBill = (subtotal - discount) + vat + ait + extra;
-            let totalPayable = currentBill + prevDue;
+            let currentBill = parseFloat(((subtotal - discount) + vat + ait + extra).toFixed(2));
+            let totalPayable = parseFloat((currentBill + prevDue).toFixed(2));
             
-            let due = Math.max(0, totalPayable - received);
+            let due = parseFloat(Math.max(0, totalPayable - received).toFixed(2));
 
             $('#summary_subtotal').text(`৳ ${subtotal.toFixed(2)}`);
             $('#summary_current_bill').text(`৳ ${currentBill.toFixed(2)}`);
@@ -271,6 +286,12 @@
 
         // Save Invoice
         $('#save_invoice_btn').click(function() {
+            // LOADING STATE FIX
+            const saveButton = this;
+            if (saveButton.disabled) {
+                return;
+            }
+
             if (items.length === 0) {
                 Swal.fire('Error', 'Please add at least one product', 'error');
                 return;
@@ -282,7 +303,9 @@
                 return;
             }
 
-            $(this).prop('disabled', true);
+            // RESPONSIVENESS ROLLBACK
+            // KEEP SIMPLE BUTTON LOADER
+            window.THTradeUX.setButtonLoading(saveButton, 'Saving...');
 
             let data = {
                 _token: '{{ csrf_token() }}',
@@ -302,6 +325,8 @@
                 data: JSON.stringify(data),
                 contentType: 'application/json',
                 success: function(response) {
+                    // TOAST NOTIFICATIONS
+                    window.THTradeUX.toast('Invoice Saved Successfully', 'success');
                     Swal.fire({
                         title: 'Success!',
                         text: response.message,
@@ -317,9 +342,12 @@
                     });
                 },
                 error: function(xhr) {
-                    $('#save_invoice_btn').prop('disabled', false);
                     let msg = xhr.responseJSON ? xhr.responseJSON.message : 'An error occurred';
+                    window.THTradeUX.toast(msg, 'error');
                     Swal.fire('Error', msg, 'error');
+                },
+                complete: function() {
+                    window.THTradeUX.resetButton(saveButton);
                 }
             });
         });

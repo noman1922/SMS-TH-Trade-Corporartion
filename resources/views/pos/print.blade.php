@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,132 +8,323 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { background: #e2e8f0; font-family: 'Inter', sans-serif; color: #1e293b; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            color: #111;
+        }
 
         .invoice-page {
             background: #fff;
             max-width: 210mm;
             min-height: 297mm;
             margin: 20px auto;
-            padding: 40px 50px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+            padding: 28px 36px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
             position: relative;
+            /* // FOOTER POSITION FIX */
+            /* // INVOICE FOOTER FIX */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .invoice-content {
+            /* // FOOTER POSITION FIX */
+            /* // INVOICE FOOTER FIX */
+            flex: 0 0 auto;
         }
 
         /* Header */
         .invoice-header {
-            border-bottom: 3px solid #1e293b;
-            padding-bottom: 24px;
-            margin-bottom: 32px;
+            /* // PRINT LAYOUT FIX */
+            border-bottom: 2px solid #111;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
         }
-        .company-name { font-size: 1.75rem; font-weight: 700; color: #1e293b; letter-spacing: 1px; }
-        .company-tagline { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
-        .company-contact { font-size: 0.8rem; color: #64748b; line-height: 1.6; }
-        .invoice-title { font-size: 1.5rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 2px; }
-        .invoice-meta { font-size: 0.85rem; color: #475569; }
-        .invoice-meta strong { color: #1e293b; }
+
+        .company-name {
+            /* // PROFESSIONAL INVOICE STYLE */
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #111;
+            letter-spacing: 1px;
+        }
+
+        .company-tagline {
+            color: #333;
+            font-size: 0.78rem;
+            margin-top: 2px;
+        }
+
+        .company-contact {
+            font-size: 0.72rem;
+            color: #333;
+            line-height: 1.35;
+        }
+
+        .invoice-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .invoice-meta {
+            font-size: 0.78rem;
+            color: #333;
+        }
+
+        .invoice-meta strong {
+            color: #111;
+        }
 
         /* Billing Section */
         .billing-section {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 32px;
+            /* // PROFESSIONAL INVOICE STYLE */
+            background: #fff;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 16px;
         }
-        .billing-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 600; margin-bottom: 8px; }
-        .billing-name { font-size: 1rem; font-weight: 600; color: #1e293b; }
-        .billing-detail { font-size: 0.85rem; color: #64748b; }
+
+        .billing-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .billing-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .billing-detail {
+            font-size: 0.78rem;
+            color: #333;
+        }
 
         /* Items Table */
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            /* // PRINT TABLE BORDER FIX */
+            margin-bottom: 14px;
+            border: 1px solid #777;
+        }
+
         .items-table thead th {
-            background: #1e293b;
-            color: #fff;
-            padding: 12px 16px;
-            font-size: 0.75rem;
+            background: #fff;
+            color: #111;
+            padding: 7px 8px;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
+            border: 1px solid #555;
         }
-        .items-table thead th:first-child { border-radius: 6px 0 0 0; }
-        .items-table thead th:last-child { border-radius: 0 6px 0 0; }
+
+        .items-table thead th:first-child {
+            border-radius: 0;
+        }
+
+        .items-table thead th:last-child {
+            border-radius: 0;
+        }
+
         .items-table tbody td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.875rem;
+            padding: 6px 8px;
+            /* // PRINT TABLE BORDER FIX */
+            border: 1px solid #bbb;
+            font-size: 0.76rem;
         }
-        .items-table tbody tr:nth-child(even) { background: #fafbfc; }
-        .items-table tbody tr:last-child td { border-bottom: 2px solid #e2e8f0; }
+
+        .items-table tbody tr:nth-child(even) {
+            background: #fff;
+        }
+
+        .items-table tbody tr:last-child td {
+            border-bottom: 1px solid #777;
+        }
 
         /* Totals */
-        .totals-section { margin-left: auto; width: 320px; }
-        .totals-table { width: 100%; }
-        .totals-table td { padding: 6px 0; font-size: 0.875rem; color: #64748b; }
-        .totals-table td:last-child { text-align: right; font-weight: 500; color: #1e293b; }
-        .totals-table .grand-total td {
-            border-top: 2px solid #1e293b;
-            font-size: 1.15rem;
-            font-weight: 700;
-            padding-top: 12px;
-            color: #1e293b;
+        .totals-section {
+            margin-left: auto;
+            width: 300px;
         }
-        .totals-table .paid td { color: #16a34a; }
-        .totals-table .due td { color: #dc2626; font-weight: 600; }
+
+        .totals-table {
+            width: 100%;
+        }
+
+        .totals-table td {
+            padding: 3px 0;
+            font-size: 0.78rem;
+            color: #222;
+            font-weight: 400;
+        }
+
+        .totals-table td:last-child {
+            text-align: right;
+            font-weight: 400;
+            color: #111;
+        }
+
+        .totals-table .grand-total td {
+            border-top: 1px solid #111;
+            font-size: 0.78rem;
+            font-weight: 400;
+            padding-top: 5px;
+            color: #111;
+        }
+
+        .totals-table .paid td {
+            color: #111;
+        }
+
+        .totals-table .due td {
+            color: #111;
+            font-weight: 700;
+        }
+
+        .totals-table .total-payable td,
+        .totals-table .final-due td {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111;
+        }
 
         /* Footer */
         .invoice-footer {
-            position: absolute;
-            bottom: 40px;
-            left: 50px;
-            right: 50px;
+            /* // PRINT LAYOUT FIX */
+            /* // FOOTER POSITION FIX */
+            position: relative;
+            bottom: auto;
+            left: auto;
+            right: auto;
+            margin-top: auto;
+            padding-top: 38px;
+            flex-shrink: 0;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
+
         .signature-line {
-            border-top: 2px solid #1e293b;
-            width: 200px;
-            padding-top: 6px;
-            font-size: 0.8rem;
+            border-top: 1px solid #111;
+            width: 180px;
+            padding-top: 5px;
+            font-size: 0.72rem;
             font-weight: 600;
-            color: #475569;
+            color: #111;
         }
+
         .footer-note {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 16px;
-            margin-top: 48px;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+            margin-top: 22px;
             text-align: center;
-            color: #94a3b8;
-            font-size: 0.75rem;
+            color: #333;
+            font-size: 0.68rem;
         }
 
         /* Print Actions */
-        .print-actions { text-align: center; margin: 20px 0; }
+        .print-actions {
+            text-align: center;
+            margin: 20px 0;
+        }
 
         @media print {
-            body { background: #fff; margin: 0; padding: 0; }
+            /* // PRINT LAYOUT FIX */
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
+            body {
+                background: #fff;
+                margin: 0;
+                padding: 0;
+                color: #111;
+            }
+
             .invoice-page {
                 box-shadow: none;
                 margin: 0;
-                padding: 30px 40px;
+                padding: 0;
                 width: 100%;
                 max-width: 100%;
-                min-height: auto;
+                min-height: calc(297mm - 20mm);
             }
-            .print-actions { display: none !important; }
-            .invoice-footer { position: relative; bottom: auto; left: auto; right: auto; margin-top: 60px; }
+
+            .invoice-content {
+                flex: 0 0 auto;
+            }
+
+            .print-actions {
+                display: none !important;
+            }
+
+            .page-break {
+                page-break-before: avoid;
+            }
+
+            .invoice-header,
+            .billing-section,
+            .totals-section,
+            .invoice-footer {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            table {
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            .invoice-footer {
+                /* // FOOTER POSITION FIX */
+                margin-top: auto;
+                padding-top: 28px;
+            }
+
+            * {
+                color: #111 !important;
+                background: #fff !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="print-actions">
-        <button onclick="window.print()" class="btn btn-primary btn-lg px-5 shadow">
+        {{-- // LOADING STATE FIX --}}
+        <button onclick="handlePrintClick(this)" class="btn btn-primary btn-lg px-5 shadow">
             <i class="bi bi-printer me-2"></i> Print Invoice
         </button>
         <a href="{{ route('pos.index') }}" class="btn btn-secondary btn-lg px-4 shadow ms-2">Back to POS</a>
     </div>
 
     <div class="invoice-page">
+        <div class="invoice-content">
         <!-- Header -->
         <div class="invoice-header">
             <div class="row align-items-start">
@@ -171,11 +363,12 @@
                 <div class="col-6 text-end">
                     <div class="billing-label">Payment Status</div>
                     @if($invoice->due_amount <= 0)
-                        <span style="color: #16a34a; font-weight: 700; font-size: 1.25rem;">PAID</span>
+                        {{-- // PROFESSIONAL INVOICE STYLE --}}
+                        <span style="color: #111; font-weight: 600; font-size: 0.9rem;">PAID</span>
                     @elseif($invoice->received_amount > 0)
-                        <span style="color: #d97706; font-weight: 700; font-size: 1.25rem;">PARTIAL</span>
+                        <span style="color: #111; font-weight: 600; font-size: 0.9rem;">PARTIAL</span>
                     @else
-                        <span style="color: #dc2626; font-weight: 700; font-size: 1.25rem;">UNPAID</span>
+                        <span style="color: #111; font-weight: 600; font-size: 0.9rem;">UNPAID</span>
                     @endif
                 </div>
             </div>
@@ -194,18 +387,18 @@
             </thead>
             <tbody>
                 @foreach($invoice->items as $index => $item)
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>
-                        <strong>{{ $item->product->product_name }}</strong>
-                        @if($item->product->model_no)
-                            <br><small style="color: #94a3b8;">Model: {{ $item->product->model_no }}</small>
-                        @endif
-                    </td>
-                    <td class="text-center">{{ $item->quantity }}</td>
-                    <td class="text-end">৳ {{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-end fw-bold">৳ {{ number_format($item->total_price, 2) }}</td>
-                </tr>
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>
+                            {{ $item->product->product_name }}
+                            @if($item->product->model_no)
+                                <br><small style="color: #333;">Model: {{ $item->product->model_no }}</small>
+                            @endif
+                        </td>
+                        <td class="text-center">{{ $item->quantity }}</td>
+                        <td class="text-end">৳ {{ number_format($item->unit_price, 2) }}</td>
+                        <td class="text-end">৳ {{ number_format($item->total_price, 2) }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -218,57 +411,70 @@
                     <td>৳ {{ number_format($invoice->sub_total, 2) }}</td>
                 </tr>
                 @if($invoice->discount_percent > 0)
-                <tr>
-                    <td>Discount ({{ $invoice->discount_percent }}%):</td>
-                    <td style="color: #dc2626;">- ৳ {{ number_format(($invoice->sub_total * $invoice->discount_percent) / 100, 2) }}</td>
-                </tr>
+                    <tr>
+                        <td>Discount ({{ $invoice->discount_percent }}%):</td>
+                        <td>- ৳
+                            {{ number_format(($invoice->sub_total * $invoice->discount_percent) / 100, 2) }}
+                        </td>
+                    </tr>
                 @endif
                 @if($invoice->vat_percent > 0)
-                <tr>
-                    <td>VAT ({{ $invoice->vat_percent }}%):</td>
-                    <td>+ ৳ {{ number_format(($invoice->sub_total * $invoice->vat_percent) / 100, 2) }}</td>
-                </tr>
+                    <tr>
+                        <td>VAT ({{ $invoice->vat_percent }}%):</td>
+                        <td>+ ৳ {{ number_format(($invoice->sub_total * $invoice->vat_percent) / 100, 2) }}</td>
+                    </tr>
                 @endif
                 @if($invoice->ait_percent > 0)
-                <tr>
-                    <td>AIT ({{ $invoice->ait_percent }}%):</td>
-                    <td>+ ৳ {{ number_format(($invoice->sub_total * $invoice->ait_percent) / 100, 2) }}</td>
-                </tr>
+                    <tr>
+                        <td>AIT ({{ $invoice->ait_percent }}%):</td>
+                        <td>+ ৳ {{ number_format(($invoice->sub_total * $invoice->ait_percent) / 100, 2) }}</td>
+                    </tr>
                 @endif
                 @if($invoice->extra_charge > 0)
-                <tr>
-                    <td>Extra Charge:</td>
-                    <td>+ ৳ {{ number_format($invoice->extra_charge, 2) }}</td>
-                </tr>
+                    <tr>
+                        <td>Extra Charge:</td>
+                        <td>+ ৳ {{ number_format($invoice->extra_charge, 2) }}</td>
+                    </tr>
                 @endif
                 @php
-                    $final_due = $invoice->customer->current_due;
-                    $current_invoice = $invoice->net_payable;
-                    $paid_amount = $invoice->received_amount;
-                    $previous_due = $final_due - ($current_invoice - $paid_amount);
-                    $total_payable = $previous_due + $current_invoice;
+                    // FINANCIAL CALCULATION FIX
+                    // CRITICAL ACCOUNTING FIX
+                    // DUE CALCULATION FIX
+                    // INVOICE PRINT DATA FIX
+                    $current_invoice = round((float) $invoice->net_payable, 2);
+                    $paid_amount = round((float) $invoice->received_amount, 2);
+                    $final_due = round(max(0, (float) $invoice->due_amount), 2);
+                    $total_payable = round($paid_amount + $final_due, 2);
+                    $previous_due = round(max(0, $total_payable - $current_invoice), 2);
                 @endphp
                 <tr class="grand-total">
-                    <td style="font-size: 1rem;">Current Invoice:</td>
-                    <td style="font-size: 1rem;">৳ {{ number_format($current_invoice, 2) }}</td>
+                    <td>Current Invoice:</td>
+                    <td>৳ {{ number_format($current_invoice, 2) }}</td>
                 </tr>
                 <tr>
-                    <td style="padding-top: 8px; color: #d97706; font-weight: 600;">Previous Due:</td>
-                    <td style="padding-top: 8px; color: #d97706; font-weight: 600;">+ ৳ {{ number_format($previous_due, 2) }}</td>
+                    <td style="padding-top: 5px;">Previous Due:</td>
+                    <td style="padding-top: 5px;">+ ৳
+                        {{ number_format($previous_due, 2) }}
+                    </td>
                 </tr>
-                <tr>
-                    <td style="padding-top: 8px; font-weight: 700; color: #1e293b; font-size: 1.1rem; border-top: 1px dashed #cbd5e1;">Total Payable:</td>
-                    <td style="padding-top: 8px; font-weight: 700; color: #1e293b; font-size: 1.1rem; border-top: 1px dashed #cbd5e1;">৳ {{ number_format($total_payable, 2) }}</td>
+                <tr class="total-payable">
+                    <td
+                        style="padding-top: 6px; border-top: 1px solid #111;">
+                        Total Payable:</td>
+                    <td
+                        style="padding-top: 6px; border-top: 1px solid #111;">
+                        ৳ {{ number_format($total_payable, 2) }}</td>
                 </tr>
                 <tr class="paid">
-                    <td style="padding-top: 8px;">Paid Amount:</td>
-                    <td style="padding-top: 8px;">- ৳ {{ number_format($paid_amount, 2) }}</td>
+                    <td style="padding-top: 5px;">Paid Amount:</td>
+                    <td style="padding-top: 5px;">- ৳ {{ number_format($paid_amount, 2) }}</td>
                 </tr>
-                <tr class="due">
-                    <td style="padding-top: 12px; font-size: 1.15rem;">Final Due:</td>
-                    <td style="padding-top: 12px; font-size: 1.15rem;">৳ {{ number_format($final_due, 2) }}</td>
+                <tr class="final-due">
+                    <td style="padding-top: 7px;">Final Due:</td>
+                    <td style="padding-top: 7px;">৳ {{ number_format($final_due, 2) }}</td>
                 </tr>
             </table>
+        </div>
         </div>
 
         <!-- Footer -->
@@ -285,10 +491,26 @@
             </div>
             <div class="footer-note">
                 <p class="mb-1">Thank you for your business!</p>
-                <p class="mb-0">This is a computer-generated invoice. No signature is required for amounts below ৳10,000.</p>
+                <p class="mb-0">This is a computer-generated invoice. No signature is required for amounts below
+                    ৳10,000.</p>
             </div>
         </div>
     </div>
 
+    <script>
+        // RESPONSIVENESS ROLLBACK
+        // LOADING STATE FIX
+        function handlePrintClick(button) {
+            const original = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...';
+            window.setTimeout(function() {
+                window.print();
+                button.disabled = false;
+                button.innerHTML = original;
+            }, 120);
+        }
+    </script>
 </body>
+
 </html>

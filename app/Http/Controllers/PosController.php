@@ -19,9 +19,17 @@ class PosController extends Controller
 {
     public function index()
     {
-        $products = Product::where('stock_quantity', '>', 0)->get();
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
+        // SUPABASE SPEED FIX
+        $products = Product::where('stock_quantity', '>', 0)
+            ->select('id', 'product_id', 'product_name', 'stock_quantity')
+            ->orderBy('product_name')
+            ->get();
+
         $customers = Customer::withSum('invoices', 'net_payable')
             ->withSum('payments', 'amount')
+            ->select('id', 'customer_name', 'mobile', 'address', 'previous_due')
             ->orderBy('customer_name', 'asc')
             ->get();
         $invoice_no = 'INV-' . strtoupper(uniqid());
@@ -34,7 +42,8 @@ class PosController extends Controller
      */
     public function getProductDetails($id)
     {
-        $product = Product::findOrFail($id);
+        // QUERY OPTIMIZATION
+        $product = Product::select('id', 'product_name', 'product_id', 'selling_price', 'stock_quantity')->findOrFail($id);
         return response()->json([
             'id' => $product->id,
             'product_name' => $product->product_name,
@@ -46,6 +55,13 @@ class PosController extends Controller
 
     public function store(Request $request)
     {
+        // POS INPUT UX FIX
+        foreach (['discount_percent', 'vat_percent', 'ait_percent', 'extra_charge'] as $field) {
+            if ($request->input($field) === '') {
+                $request->merge([$field => null]);
+            }
+        }
+
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'items' => 'required|array|min:1',
@@ -61,14 +77,32 @@ class PosController extends Controller
 
         try {
             return DB::transaction(function () use ($request) {
-                $customer = Customer::findOrFail($request->customer_id);
+                // QUERY OPTIMIZATION
+                $customer = Customer::query()
+                    ->select('id', 'customer_name', 'previous_due')
+                    ->withSum('invoices', 'net_payable')
+                    ->withSum('payments', 'amount')
+                    ->lockForUpdate()
+                    ->findOrFail($request->customer_id);
                 $sub_total = 0;
                 $items_to_save = [];
                 $stock_history_records = [];
+                $requestedProductIds = collect($request->items)->pluck('product_id')->unique()->values();
+
+                // QUERY OPTIMIZATION
+                // Lock all requested product rows in one Supabase round trip.
+                $products = Product::whereIn('id', $requestedProductIds)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
 
                 foreach ($request->items as $itemData) {
-                    // 1. Lock and find product
-                    $product = Product::lockForUpdate()->findOrFail($itemData['product_id']);
+                    // 1. Use the already locked product row
+                    $product = $products->get((int) $itemData['product_id']);
+
+                    if (! $product) {
+                        throw new Exception('Selected product was not found.');
+                    }
                     
                     // 2. Strict stock check
                     if ($product->stock_quantity < $itemData['quantity']) {
@@ -76,14 +110,17 @@ class PosController extends Controller
                     }
 
                     // 3. Use server-side price (never trust frontend price)
-                    $item_total = $product->selling_price * $itemData['quantity'];
-                    $sub_total += $item_total;
+                    // FINANCIAL CALCULATION FIX
+                    $unitPrice = round((float) $product->selling_price, 2);
+                    $costPrice = round((float) $product->cost_price, 2);
+                    $item_total = round($unitPrice * (int) $itemData['quantity'], 2);
+                    $sub_total = round($sub_total + $item_total, 2);
 
                     $items_to_save[] = [
                         'product_id' => $product->id,
                         'quantity' => $itemData['quantity'],
-                        'cost_price' => $product->cost_price,
-                        'unit_price' => $product->selling_price,
+                        'cost_price' => $costPrice,
+                        'unit_price' => $unitPrice,
                         'total_price' => $item_total,
                     ];
 
@@ -95,14 +132,25 @@ class PosController extends Controller
                 }
 
                 // 5. Recalculate all totals server-side (never trust frontend)
-                $discount = ($sub_total * ($request->discount_percent ?? 0)) / 100;
-                $vat = ($sub_total * ($request->vat_percent ?? 0)) / 100;
-                $ait = ($sub_total * ($request->ait_percent ?? 0)) / 100;
-                $extra = $request->extra_charge ?? 0;
+                // POS INPUT UX FIX
+                // FINANCIAL CALCULATION FIX
+                $discountPercent = round((float) ($request->input('discount_percent') ?? 0), 2);
+                $vatPercent = round((float) ($request->input('vat_percent') ?? 0), 2);
+                $aitPercent = round((float) ($request->input('ait_percent') ?? 0), 2);
+                $extra = round((float) ($request->input('extra_charge') ?? 0), 2);
 
-                $net_payable = ($sub_total - $discount) + $vat + $ait + $extra;
-                $received = min($request->received_amount, $net_payable); // Prevent overpayment
-                $due = max(0, $net_payable - $received);
+                $discount = round(($sub_total * $discountPercent) / 100, 2);
+                $vat = round(($sub_total * $vatPercent) / 100, 2);
+                $ait = round(($sub_total * $aitPercent) / 100, 2);
+
+                // CRITICAL ACCOUNTING FIX
+                // DUE CALCULATION FIX
+                $net_payable = round(($sub_total - $discount) + $vat + $ait + $extra, 2);
+                $previousDue = round((float) $customer->current_due, 2);
+                $totalPayable = round($previousDue + $net_payable, 2);
+                $receivedAmount = round((float) $request->received_amount, 2);
+                $received = round(min($receivedAmount, $totalPayable), 2); // Prevent unintended advance/overpayment
+                $due = round(max(0, $totalPayable - $received), 2);
 
                 // 6. Create Invoice
                 $invoice = Invoice::create([
@@ -110,9 +158,9 @@ class PosController extends Controller
                     'customer_id' => $request->customer_id,
                     'user_id' => Auth::id(),
                     'sub_total' => $sub_total,
-                    'discount_percent' => $request->discount_percent ?? 0,
-                    'vat_percent' => $request->vat_percent ?? 0,
-                    'ait_percent' => $request->ait_percent ?? 0,
+                    'discount_percent' => $discountPercent,
+                    'vat_percent' => $vatPercent,
+                    'ait_percent' => $aitPercent,
                     'extra_charge' => $extra,
                     'net_payable' => $net_payable,
                     'received_amount' => $received,
@@ -180,9 +228,14 @@ class PosController extends Controller
         }
     }
 
-    public function print($id)
+    public function print(Invoice $invoice)
     {
-        $invoice = Invoice::with(['customer', 'items.product', 'user'])->findOrFail($id);
+        // ROW PRINT FIX
+        if (auth()->user()->role !== 'admin' && $invoice->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $invoice->load(['customer', 'items.product', 'user']);
         return view('pos.print', compact('invoice'));
     }
 }
