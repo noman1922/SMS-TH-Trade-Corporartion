@@ -19,7 +19,10 @@ class ProductController extends Controller
     {
         $search = $request->input('search');
 
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
         $products = Product::query()
+            ->select('id', 'product_name', 'product_id', 'model_no', 'cost_price', 'selling_price', 'stock_quantity', 'category', 'created_at')
             ->when($search, function ($query, $search) {
                 return $query->where('product_name', 'like', "%{$search}%")
                              ->orWhere('product_id', 'like', "%{$search}%");

@@ -20,7 +20,8 @@
                     <h5 class="mb-0">Product List</h5>
                 </div>
                 <div class="col-md-4">
-                    <form action="{{ route('products.index') }}" method="GET">
+                    {{-- // SEARCH INPUT OPTIMIZATION --}}
+                    <form action="{{ route('products.index') }}" method="GET" class="js-debounce-search" data-debounce="400" data-loading-text="Searching...">
                         <div class="input-group">
                             <input type="text" name="search" class="form-control" placeholder="Search by name or ID..." value="{{ $search ?? '' }}">
                             <button class="btn btn-outline-secondary" type="submit">
@@ -92,7 +93,7 @@
                                                     <form action="{{ route('products.destroy', $product->id) }}" method="POST">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                                        <button type="submit" class="btn btn-danger" data-loading-text="Processing...">Delete</button>
                                                     </form>
                                                 </div>
                                             </div>
