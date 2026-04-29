@@ -20,7 +20,8 @@
                     <h5 class="mb-0">Customer Information</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('customers.store') }}" method="POST">
+                    {{-- // LOADING STATE FIX --}}
+                    <form action="{{ route('customers.store') }}" method="POST" data-loading-text="Saving...">
                         @csrf
                         
                         <div class="row mb-3">
@@ -71,7 +72,7 @@
 
                         <div class="text-end mt-4">
                             <button type="reset" class="btn btn-light border">Reset</button>
-                            <button type="submit" class="btn btn-primary px-4">Save Customer</button>
+                            <button type="submit" class="btn btn-primary px-4" data-loading-text="Saving...">Save Customer</button>
                         </div>
                     </form>
                 </div>

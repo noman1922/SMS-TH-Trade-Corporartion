@@ -20,7 +20,8 @@
                     <h5 class="mb-0">Update Customer: {{ $customer->customer_name }}</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('customers.update', $customer->id) }}" method="POST">
+                    {{-- // LOADING STATE FIX --}}
+                    <form action="{{ route('customers.update', $customer->id) }}" method="POST" data-loading-text="Saving...">
                         @csrf
                         @method('PUT')
                         
@@ -71,7 +72,7 @@
 
                         <div class="text-end mt-4">
                             <a href="{{ route('customers.index') }}" class="btn btn-light border">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4">Update Customer</button>
+                            <button type="submit" class="btn btn-primary px-4" data-loading-text="Saving...">Update Customer</button>
                         </div>
                     </form>
                 </div>

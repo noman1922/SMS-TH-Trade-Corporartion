@@ -65,9 +65,16 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
+        $customer->loadCount('invoices')
+            ->loadSum('invoices', 'net_payable')
+            ->loadSum('payments', 'amount');
+
         // Calculate financial summaries (handled by model attributes)
         $invoices = $customer->invoices()
-            ->with('user')
+            ->with('user:id,name')
+            ->select('id', 'invoice_no', 'customer_id', 'user_id', 'net_payable', 'received_amount', 'due_amount', 'date', 'created_at')
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(10);

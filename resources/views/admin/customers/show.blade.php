@@ -83,7 +83,7 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th class="ps-3">Invoice No</th>
@@ -109,7 +109,8 @@
                                             @endif
                                         </td>
                                         <td class="text-end pe-3">
-                                            <a href="{{ route('pos.print', $invoice->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                            {{-- // ROW PRINT FIX --}}
+                                            <a href="{{ route('invoice.print', $invoice->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
                                                 <i class="bi bi-printer"></i>
                                             </a>
                                         </td>

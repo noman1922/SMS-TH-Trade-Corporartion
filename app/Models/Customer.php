@@ -14,6 +14,11 @@ class Customer extends Model
         'previous_due'
     ];
 
+    // FINANCIAL CALCULATION FIX
+    protected $casts = [
+        'previous_due' => 'decimal:2',
+    ];
+
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
@@ -29,18 +34,27 @@ class Customer extends Model
      */
     public function getTotalPurchasedAttribute()
     {
-        return $this->invoices_avg_net_payable ? $this->invoices_sum_net_payable : ($this->invoices_sum_net_payable ?? $this->invoices()->sum('net_payable'));
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
+        // FINANCIAL CALCULATION FIX
+        $total = $this->invoices_sum_net_payable ?? $this->invoices()->sum('net_payable');
+        return round((float) $total, 2);
     }
 
     public function getTotalPaidAttribute()
     {
-        return $this->payments_avg_amount ? $this->payments_sum_amount : ($this->payments_sum_amount ?? $this->payments()->sum('amount'));
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
+        // FINANCIAL CALCULATION FIX
+        $total = $this->payments_sum_amount ?? $this->payments()->sum('amount');
+        return round((float) $total, 2);
     }
 
     public function getCurrentDueAttribute()
     {
-        $purchased = $this->invoices_sum_net_payable ?? $this->invoices()->sum('net_payable');
-        $paid = $this->payments_sum_amount ?? $this->payments()->sum('amount');
-        return ($this->previous_due + $purchased) - $paid;
+        // FINANCIAL CALCULATION FIX
+        $purchased = round((float) ($this->invoices_sum_net_payable ?? $this->invoices()->sum('net_payable')), 2);
+        $paid = round((float) ($this->payments_sum_amount ?? $this->payments()->sum('amount')), 2);
+        return round(max(0, ((float) $this->previous_due + $purchased) - $paid), 2);
     }
 }
