@@ -8,11 +8,7 @@
         <div class="col-md-6">
             <h3 class="fw-bold">Outstanding Due Report</h3>
         </div>
-        <div class="col-md-6 text-end d-print-none">
-            <button onclick="window.print()" class="btn btn-secondary me-2">
-                <i class="bi bi-printer me-1"></i> Print
-            </button>
-        </div>
+        {{-- // ROW PRINT FIX --}}
     </div>
 
     <!-- Summary Card -->
@@ -61,6 +57,10 @@
                                 <td class="text-end pe-3 d-print-none">
                                     <a href="{{ route('payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-sm btn-primary">
                                         Collect
+                                    </a>
+                                    {{-- // ROW PRINT FIX --}}
+                                    <a href="{{ route('receipt.print', $customer->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                        <i class="bi bi-printer"></i>
                                     </a>
                                 </td>
                             </tr>

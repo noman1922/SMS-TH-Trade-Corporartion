@@ -17,6 +17,12 @@ class Payment extends Model
         'created_by'
     ];
 
+    // FINANCIAL CALCULATION FIX
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'date' => 'date',
+    ];
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

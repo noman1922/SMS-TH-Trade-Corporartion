@@ -20,7 +20,8 @@
                     <h5 class="mb-0">Payment Entry Form</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('payments.store') }}" method="POST">
+                    {{-- // LOADING STATE FIX --}}
+                    <form action="{{ route('payments.store') }}" method="POST" data-loading-text="Processing...">
                         @csrf
                         
                         <div class="row mb-4">
@@ -119,7 +120,7 @@
                         </div>
 
                         <div class="text-end">
-                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">Record Payment</button>
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold" data-loading-text="Processing...">Record Payment</button>
                         </div>
                     </form>
                 </div>

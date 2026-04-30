@@ -21,7 +21,8 @@
                     <h5 class="mb-0">Outstanding Due List</h5>
                 </div>
                 <div class="col-md-4">
-                    <form action="{{ route('payments.index') }}" method="GET">
+                    {{-- // SEARCH INPUT OPTIMIZATION --}}
+                    <form action="{{ route('payments.index') }}" method="GET" class="js-debounce-search" data-debounce="400" data-loading-text="Searching...">
                         <div class="input-group">
                             <input type="text" name="search" class="form-control" placeholder="Search customer..." value="{{ $search ?? '' }}">
                             <button class="btn btn-outline-secondary" type="submit">
@@ -59,6 +60,10 @@
                                 <td class="text-end pe-3">
                                     <a href="{{ route('payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-sm btn-primary">
                                         Collect Payment
+                                    </a>
+                                    {{-- // ROW PRINT FIX --}}
+                                    <a href="{{ route('receipt.print', $customer->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                        <i class="bi bi-printer"></i>
                                     </a>
                                 </td>
                             </tr>
