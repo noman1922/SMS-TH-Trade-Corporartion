@@ -13,6 +13,19 @@ class Invoice extends Model
         'due_amount', 'date'
     ];
 
+    // FINANCIAL CALCULATION FIX
+    protected $casts = [
+        'sub_total' => 'decimal:2',
+        'discount_percent' => 'decimal:2',
+        'vat_percent' => 'decimal:2',
+        'ait_percent' => 'decimal:2',
+        'extra_charge' => 'decimal:2',
+        'net_payable' => 'decimal:2',
+        'received_amount' => 'decimal:2',
+        'due_amount' => 'decimal:2',
+        'date' => 'date',
+    ];
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);
@@ -43,8 +56,9 @@ class Invoice extends Model
      */
     public function getRemainingDueAttribute()
     {
-        // Source of truth: Total Allocated payments
-        $totalPaid = $this->allocations()->sum('amount');
-        return max(0, $this->net_payable - $totalPaid);
+        // FINANCIAL CALCULATION FIX
+        // CRITICAL ACCOUNTING FIX
+        // DUE CALCULATION FIX
+        return round(max(0, (float) $this->due_amount), 2);
     }
 }
