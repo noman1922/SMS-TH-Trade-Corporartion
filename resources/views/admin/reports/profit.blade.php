@@ -18,7 +18,8 @@
     <!-- Filters -->
     <div class="card shadow-sm mb-4 d-print-none">
         <div class="card-body">
-            <form action="{{ route('reports.profit') }}" method="GET" class="row align-items-end">
+            {{-- // RESPONSIVENESS ROLLBACK --}}
+            <form action="{{ route('reports.profit') }}" method="GET" class="row align-items-end" data-loading-text="Generating...">
                 <div class="col-md-4">
                     <label class="form-label small text-muted">From Date</label>
                     <input type="date" name="from_date" class="form-control" value="{{ $fromDate }}">
@@ -28,7 +29,7 @@
                     <input type="date" name="to_date" class="form-control" value="{{ $toDate }}">
                 </div>
                 <div class="col-md-4 mt-3 mt-md-0">
-                    <button type="submit" class="btn btn-primary px-4 w-100">
+                    <button type="submit" class="btn btn-primary px-4 w-100" data-loading-text="Generating...">
                         <i class="bi bi-filter me-1"></i> Analyze Profit
                     </button>
                 </div>

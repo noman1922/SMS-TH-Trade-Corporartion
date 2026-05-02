@@ -8,17 +8,14 @@
         <div class="col-md-6">
             <h3 class="fw-bold">Sales Report</h3>
         </div>
-        <div class="col-md-6 text-end">
-            <button onclick="window.print()" class="btn btn-secondary me-2">
-                <i class="bi bi-printer me-1"></i> Print
-            </button>
-        </div>
+        {{-- // ROW PRINT FIX --}}
     </div>
 
     <!-- Filters -->
     <div class="card shadow-sm mb-4 d-print-none">
         <div class="card-body">
-            <form action="{{ route('reports.sales') }}" method="GET" class="row align-items-end">
+            {{-- // RESPONSIVENESS ROLLBACK --}}
+            <form action="{{ route('reports.sales') }}" method="GET" class="row align-items-end" data-loading-text="Generating...">
                 <div class="col-md-4">
                     <label class="form-label small text-muted">From Date</label>
                     <input type="date" name="from_date" class="form-control" value="{{ $fromDate }}">
@@ -28,7 +25,7 @@
                     <input type="date" name="to_date" class="form-control" value="{{ $toDate }}">
                 </div>
                 <div class="col-md-4 mt-3 mt-md-0">
-                    <button type="submit" class="btn btn-primary px-4 w-100">
+                    <button type="submit" class="btn btn-primary px-4 w-100" data-loading-text="Generating...">
                         <i class="bi bi-filter me-1"></i> Generate Report
                     </button>
                 </div>
@@ -85,6 +82,7 @@
                             <th>Total</th>
                             <th>Paid</th>
                             <th>Due</th>
+                            <th class="text-end pe-3">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,10 +94,16 @@
                                 <td>৳ {{ number_format($invoice->net_payable, 2) }}</td>
                                 <td class="text-success">৳ {{ number_format($invoice->received_amount, 2) }}</td>
                                 <td class="text-danger fw-bold">৳ {{ number_format($invoice->due_amount, 2) }}</td>
+                                <td class="text-end pe-3">
+                                    {{-- // ROW PRINT FIX --}}
+                                    <a href="{{ route('invoice.print', $invoice->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">No sales records found for this period.</td>
+                                <td colspan="7" class="text-center py-5 text-muted">No sales records found for this period.</td>
                             </tr>
                         @endforelse
                     </tbody>

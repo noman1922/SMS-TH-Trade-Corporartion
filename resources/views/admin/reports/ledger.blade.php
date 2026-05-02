@@ -10,9 +10,10 @@
         </div>
         <div class="col-md-6 text-end d-print-none">
             @if($customer)
-                <button onclick="window.print()" class="btn btn-secondary me-2">
-                    <i class="bi bi-printer me-1"></i> Print
-                </button>
+                {{-- // ROW PRINT FIX --}}
+                <a href="{{ route('receipt.print', $customer->id) }}" class="btn btn-secondary me-2" target="_blank">
+                    <i class="bi bi-printer me-1"></i> Print Statement
+                </a>
             @endif
         </div>
     </div>
@@ -20,7 +21,8 @@
     <!-- Customer Selector -->
     <div class="card shadow-sm mb-4 d-print-none">
         <div class="card-body">
-            <form action="{{ route('reports.ledger') }}" method="GET" class="row align-items-end">
+            {{-- // RESPONSIVENESS ROLLBACK --}}
+            <form action="{{ route('reports.ledger') }}" method="GET" class="row align-items-end" data-loading-text="Generating...">
                 <div class="col-md-8">
                     <label class="form-label small text-muted">Select Customer</label>
                     <select name="customer_id" class="form-select" required>
@@ -33,7 +35,7 @@
                     </select>
                 </div>
                 <div class="col-md-4 mt-3 mt-md-0">
-                    <button type="submit" class="btn btn-primary px-4 w-100">
+                    <button type="submit" class="btn btn-primary px-4 w-100" data-loading-text="Generating...">
                         <i class="bi bi-journal-text me-1"></i> View Ledger
                     </button>
                 </div>
