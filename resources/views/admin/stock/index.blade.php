@@ -23,7 +23,8 @@
                     <h5 class="mb-0">Current Stock Levels</h5>
                 </div>
                 <div class="col-md-4">
-                    <form action="{{ route('stock.index') }}" method="GET">
+                    {{-- // SEARCH INPUT OPTIMIZATION --}}
+                    <form action="{{ route('stock.index') }}" method="GET" class="js-debounce-search" data-debounce="400" data-loading-text="Searching...">
                         <div class="input-group">
                             <input type="text" name="search" class="form-control" placeholder="Search product..." value="{{ $search ?? '' }}">
                             <button class="btn btn-outline-secondary" type="submit">

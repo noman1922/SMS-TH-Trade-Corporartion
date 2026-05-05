@@ -21,8 +21,11 @@ class StockController extends Controller
     {
         $search = $request->input('search');
 
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
         // Current Stock Levels
         $products = Product::query()
+            ->select('id', 'product_name', 'product_id', 'model_no', 'cost_price', 'selling_price', 'stock_quantity', 'category')
             ->when($search, function ($query, $search) {
                 return $query->where('product_name', 'like', "%{$search}%")
                              ->orWhere('product_id', 'like', "%{$search}%");
@@ -32,7 +35,8 @@ class StockController extends Controller
             ->withQueryString();
 
         // Recent History Logs
-        $histories = StockHistory::with(['product', 'user'])
+        $histories = StockHistory::with(['product:id,product_id,product_name', 'user:id,name'])
+            ->select('id', 'product_id', 'type', 'quantity', 'reference_type', 'reference_id', 'note', 'date', 'created_by', 'created_at')
             ->orderBy('created_at', 'desc')
             ->paginate(15, ['*'], 'history_page')
             ->withQueryString();
@@ -45,7 +49,10 @@ class StockController extends Controller
      */
     public function create()
     {
-        $products = Product::orderBy('product_name', 'asc')->get();
+        // QUERY OPTIMIZATION
+        $products = Product::select('id', 'product_id', 'product_name', 'stock_quantity')
+            ->orderBy('product_name', 'asc')
+            ->get();
         return view('admin.stock.create', compact('products'));
     }
 

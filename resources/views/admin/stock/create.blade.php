@@ -20,7 +20,8 @@
                     <h5 class="mb-0">Manual Stock Adjustment</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('stock.store') }}" method="POST">
+                    {{-- // LOADING STATE FIX --}}
+                    <form action="{{ route('stock.store') }}" method="POST" data-loading-text="Saving...">
                         @csrf
                         
                         <div class="mb-3">
@@ -65,7 +66,7 @@
 
                         <div class="text-end mt-4">
                             <button type="reset" class="btn btn-light border">Reset</button>
-                            <button type="submit" class="btn btn-primary px-4">Update Stock</button>
+                            <button type="submit" class="btn btn-primary px-4" data-loading-text="Saving...">Update Stock</button>
                         </div>
                     </form>
                 </div>
