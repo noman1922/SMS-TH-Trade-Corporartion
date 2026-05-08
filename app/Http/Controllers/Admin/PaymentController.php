@@ -23,12 +23,17 @@ class PaymentController extends Controller
     {
         $search = $request->input('search');
 
+        // PERFORMANCE OPTIMIZATION
+        // QUERY OPTIMIZATION
         $customers = Customer::query()
+            ->select('id', 'customer_name', 'hospital_name', 'mobile', 'previous_due')
             ->when($search, function ($query, $search) {
                 return $query->where('customer_name', 'like', "%{$search}%")
                              ->orWhere('mobile', 'like', "%{$search}%");
             })
             ->withCount('invoices')
+            ->withSum('invoices', 'net_payable')
+            ->withSum('payments', 'amount')
             ->get()
             ->filter(function ($customer) {
                 return $customer->current_due > 0;
@@ -45,9 +50,26 @@ class PaymentController extends Controller
         $customerId = $request->input('customer_id');
         $invoiceId = $request->input('invoice_id');
 
-        $customers = Customer::orderBy('customer_name', 'asc')->get();
-        $selectedCustomer = $customerId ? Customer::find($customerId) : null;
-        $selectedInvoice = $invoiceId ? Invoice::find($invoiceId) : null;
+        // QUERY OPTIMIZATION
+        $customers = Customer::select('id', 'customer_name', 'previous_due')
+            ->withSum('invoices', 'net_payable')
+            ->withSum('payments', 'amount')
+            ->orderBy('customer_name', 'asc')
+            ->get();
+
+        $selectedCustomer = $customerId
+            ? Customer::select('id', 'customer_name', 'previous_due')
+                ->withSum('invoices', 'net_payable')
+                ->withSum('payments', 'amount')
+                ->with(['invoices' => function ($query) {
+                    $query->select('id', 'customer_id', 'invoice_no', 'due_amount')
+                        ->where('due_amount', '>', 0)
+                        ->orderBy('date', 'desc');
+                }])
+                ->find($customerId)
+            : null;
+
+        $selectedInvoice = $invoiceId ? Invoice::select('id', 'invoice_no', 'due_amount')->find($invoiceId) : null;
 
         return view('admin.payments.create', compact('customers', 'selectedCustomer', 'selectedInvoice'));
     }
@@ -61,14 +83,17 @@ class PaymentController extends Controller
             return DB::transaction(function () use ($request) {
                 $customerId = $request->customer_id;
                 $invoiceId = $request->invoice_id;
-                $amount = $request->amount;
+                // FINANCIAL CALCULATION FIX
+                $amount = round((float) $request->amount, 2);
 
                 if ($invoiceId) {
                     // Specific Invoice Payment
                     $invoice = Invoice::lockForUpdate()->findOrFail($invoiceId);
+                    // FINANCIAL CALCULATION FIX
+                    $remainingDue = round((float) $invoice->remaining_due, 2);
                     
-                    if ($amount > $invoice->remaining_due) {
-                        throw new Exception("Overpayment detected! Remaining due is only ৳" . number_format($invoice->remaining_due, 2));
+                    if ($amount > $remainingDue) {
+                        throw new Exception("Overpayment detected! Remaining due is only ৳" . number_format($remainingDue, 2));
                     }
 
                     $payment = Payment::create([
@@ -89,15 +114,30 @@ class PaymentController extends Controller
                     ]);
 
                     // Sync legacy fields
-                    $invoice->increment('received_amount', $amount);
-                    $invoice->decrement('due_amount', $amount);
+                    // FINANCIAL CALCULATION FIX
+                    // CRITICAL ACCOUNTING FIX
+                    // DUE CALCULATION FIX
+                    $newReceived = round((float) $invoice->received_amount + $amount, 2);
+                    $newDue = round(max(0, (float) $invoice->due_amount - $amount), 2);
+                    $invoice->update([
+                        'received_amount' => number_format($newReceived, 2, '.', ''),
+                        'due_amount' => number_format($newDue, 2, '.', ''),
+                    ]);
 
                 } else {
                     // Advance / Unallocated Payment
-                    $customer = Customer::lockForUpdate()->findOrFail($customerId);
+                    // QUERY OPTIMIZATION
+                    $customer = Customer::query()
+                        ->select('id', 'previous_due')
+                        ->withSum('invoices', 'net_payable')
+                        ->withSum('payments', 'amount')
+                        ->lockForUpdate()
+                        ->findOrFail($customerId);
+                    // FINANCIAL CALCULATION FIX
+                    $currentDue = round((float) $customer->current_due, 2);
                     
-                    if ($amount > $customer->current_due) {
-                         throw new Exception("Payment exceeds total customer due! Total due is ৳" . number_format($customer->current_due, 2));
+                    if ($amount > $currentDue) {
+                         throw new Exception("Payment exceeds total customer due! Total due is ৳" . number_format($currentDue, 2));
                     }
 
                     $payment = Payment::create([
@@ -114,8 +154,9 @@ class PaymentController extends Controller
 
                 Log::info('Payment recorded', ['payment_id' => $payment->id, 'amount' => $amount, 'user_id' => Auth::id()]);
 
-                return redirect()->route('payments.index')
-                    ->with('success', 'Payment of ৳' . number_format($amount, 2) . ' recorded successfully.');
+                // PAYMENT RECEIPT SYSTEM
+                return redirect()->route('payment.receipt', $payment)
+                    ->with('success', 'Payment of ৳' . number_format($amount, 2) . ' recorded successfully. Print the receipt below.');
             });
         } catch (Exception $e) {
             Log::error('Payment creation failed', ['error' => $e->getMessage(), 'user_id' => Auth::id()]);
@@ -126,10 +167,29 @@ class PaymentController extends Controller
     /**
      * Generate printable receipt.
      */
-    public function receipt($id)
+    public function receipt(Payment $payment)
     {
-        $payment = Payment::with(['customer', 'invoice', 'user'])->findOrFail($id);
-        return view('admin.payments.receipt', compact('payment'));
+        // PAYMENT RECEIPT SYSTEM
+        if (auth()->user()->role !== 'admin' && $payment->created_by !== auth()->id()) {
+            abort(403);
+        }
+
+        // QUERY OPTIMIZATION
+        $payment->load([
+            'customer' => function ($query) {
+                $query->select('id', 'customer_name', 'mobile', 'address', 'previous_due')
+                    ->withSum('invoices', 'net_payable')
+                    ->withSum('payments', 'amount');
+            },
+            'invoice.allocations',
+            'user:id,name',
+        ]);
+        // FINANCIAL CALCULATION FIX
+        $remainingDue = round((float) $payment->customer->current_due, 2);
+        $previousDue = round($remainingDue + (float) $payment->amount, 2);
+        $receiptNo = 'REC-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT);
+
+        return view('admin.payments.receipt', compact('payment', 'previousDue', 'remainingDue', 'receiptNo'));
     }
 
     /**
@@ -150,8 +210,15 @@ class PaymentController extends Controller
                 if ($payment->invoice_id) {
                     $invoice = Invoice::lockForUpdate()->find($payment->invoice_id);
                     if ($invoice) {
-                        $invoice->decrement('received_amount', $payment->amount);
-                        $invoice->increment('due_amount', $payment->amount);
+                        // FINANCIAL CALCULATION FIX
+                        // CRITICAL ACCOUNTING FIX
+                        // DUE CALCULATION FIX
+                        $newReceived = round(max(0, (float) $invoice->received_amount - (float) $payment->amount), 2);
+                        $newDue = round((float) $invoice->due_amount + (float) $payment->amount, 2);
+                        $invoice->update([
+                            'received_amount' => number_format($newReceived, 2, '.', ''),
+                            'due_amount' => number_format($newDue, 2, '.', ''),
+                        ]);
                     }
                 }
 
