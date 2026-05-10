@@ -24,6 +24,8 @@ class PaymentRequest extends FormRequest
         return [
             'customer_id' => ['required', 'exists:customers,id'],
             'invoice_id' => ['nullable', 'exists:invoices,id'],
+            // INVOICE PAYMENT SYSTEM
+            'invoice_no' => ['nullable', 'string', 'max:100'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'string', 'in:cash,bank,card'],
             'date' => ['required', 'date'],

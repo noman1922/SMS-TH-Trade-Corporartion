@@ -33,6 +33,7 @@ class ProductRequest extends FormRequest
                 Rule::unique('products', 'product_id')->ignore($productId)
             ],
             'model_no' => ['nullable', 'string', 'max:100'],
+            'pack_size' => ['nullable', 'string', 'max:100'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0', 'gte:cost_price'],
             'stock_quantity' => ['required', 'integer', 'min:0'],

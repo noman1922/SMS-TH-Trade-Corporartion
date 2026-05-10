@@ -25,17 +25,27 @@
                         @csrf
                         
                         <div class="row mb-3">
-                            <div class="col-md-12 mb-3">
-                                <label for="customer_name" class="form-label">Customer Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('customer_name') is-invalid @enderror" id="customer_name" name="customer_name" value="{{ old('customer_name') }}" placeholder="Full Name of Customer" required>
-                                @error('customer_name')
+                            {{-- // CUSTOMER MODULE IMPROVEMENT --}}
+                            {{-- // CUSTOMER ID GENERATOR --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_id" class="form-label">Customer ID</label>
+                                <input type="text" class="form-control bg-light @error('customer_id') is-invalid @enderror" id="customer_id" name="customer_id" value="{{ old('customer_id', $nextCustomerId) }}" readonly>
+                                @error('customer_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Auto-generated when saved.</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="hospital_name" class="form-label">Organization / Hospital Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('hospital_name') is-invalid @enderror" id="hospital_name" name="hospital_name" value="{{ old('hospital_name') }}" placeholder="Organization, Hospital, or Clinic Name" required>
+                                @error('hospital_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="hospital_name" class="form-label">Hospital Name</label>
-                                <input type="text" class="form-control @error('hospital_name') is-invalid @enderror" id="hospital_name" name="hospital_name" value="{{ old('hospital_name') }}" placeholder="Hospital/Clinic Name (Optional)">
-                                @error('hospital_name')
+                                <label for="customer_name" class="form-label">Customer Name</label>
+                                <input type="text" class="form-control @error('customer_name') is-invalid @enderror" id="customer_name" name="customer_name" value="{{ old('customer_name') }}" placeholder="Contact Person Name (Optional)">
+                                @error('customer_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

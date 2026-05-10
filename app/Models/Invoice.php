@@ -8,7 +8,8 @@ class Invoice extends Model
 {
     protected $fillable = [
         'invoice_no', 'customer_id', 'user_id', 'sub_total', 
-        'discount_percent', 'vat_percent', 'ait_percent', 
+        'discount_percent', 'discount_type', 'discount_amount',
+        'vat_percent', 'ait_percent', 
         'extra_charge', 'net_payable', 'received_amount', 
         'due_amount', 'date'
     ];
@@ -17,6 +18,8 @@ class Invoice extends Model
     protected $casts = [
         'sub_total' => 'decimal:2',
         'discount_percent' => 'decimal:2',
+        // DISCOUNT TYPE SYSTEM
+        'discount_amount' => 'decimal:2',
         'vat_percent' => 'decimal:2',
         'ait_percent' => 'decimal:2',
         'extra_charge' => 'decimal:2',

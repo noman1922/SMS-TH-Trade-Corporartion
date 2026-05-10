@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Customer;
+use App\Models\PriceApprovalRequest;
 use App\Models\Product;
+use App\Models\StaffProductRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class AdminDashboardController extends Controller
@@ -68,7 +71,11 @@ class AdminDashboardController extends Controller
         $lowStockCount = (int) $productSummary->low_stock_count;
 
         // Recent Invoices (last 10)
-        $recentInvoices = Invoice::with('customer:id,customer_name')
+        // CUSTOMER_ID MIGRATION FIX
+        // SAFE CUSTOMER QUERY
+        $recentInvoices = Invoice::with(['customer' => function ($query) {
+                $query->select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name']));
+            }])
             ->select('id', 'invoice_no', 'customer_id', 'net_payable', 'received_amount', 'due_amount', 'date', 'created_at')
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -81,6 +88,25 @@ class AdminDashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // STAFF PRODUCT REQUEST
+        // PRICE APPROVAL SYSTEM
+        // SAFE DASHBOARD QUERY — guard against tables not yet migrated
+        $pendingProductRequests = Schema::hasTable('staff_product_requests')
+            ? StaffProductRequest::with('requester:id,name')
+                ->where('status', 'pending')
+                ->latest()
+                ->limit(5)
+                ->get()
+            : collect();
+
+        $pendingPriceRequests = Schema::hasTable('price_approval_requests')
+            ? PriceApprovalRequest::with(['requester:id,name', 'product:id,product_id,product_name'])
+                ->where('status', 'pending')
+                ->latest()
+                ->limit(5)
+                ->get()
+            : collect();
+
         return view('admin.dashboard', compact(
             'todaySales',
             'totalDue',
@@ -89,7 +115,9 @@ class AdminDashboardController extends Controller
             'lowStockCount',
             'monthlySales',
             'recentInvoices',
-            'lowStockProducts'
+            'lowStockProducts',
+            'pendingProductRequests',
+            'pendingPriceRequests'
         ));
     }
 }

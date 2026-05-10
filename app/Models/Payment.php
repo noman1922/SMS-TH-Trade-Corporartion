@@ -10,6 +10,8 @@ class Payment extends Model
         'customer_id',
         'invoice_id',
         'amount',
+        'previous_due',
+        'remaining_due',
         'payment_type',
         'payment_method',
         'date',
@@ -20,6 +22,9 @@ class Payment extends Model
     // FINANCIAL CALCULATION FIX
     protected $casts = [
         'amount' => 'decimal:2',
+        // DUE HISTORY SYSTEM
+        'previous_due' => 'decimal:2',
+        'remaining_due' => 'decimal:2',
         'date' => 'date',
     ];
 

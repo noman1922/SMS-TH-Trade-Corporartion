@@ -41,6 +41,7 @@
                             <th>Product Name</th>
                             <th>Category</th>
                             <th>Model No</th>
+                            <th>Pack Size</th>
                             <th>Cost Price</th>
                             <th>Selling Price</th>
                             <th>Stock</th>
@@ -54,6 +55,7 @@
                                 <td>{{ $product->product_name }}</td>
                                 <td><span class="badge bg-info text-dark">{{ $product->category }}</span></td>
                                 <td>{{ $product->model_no ?? 'N/A' }}</td>
+                                <td>{{ $product->pack_size ?? 'N/A' }}</td>
                                 <td>${{ number_format($product->cost_price, 2) }}</td>
                                 <td>${{ number_format($product->selling_price, 2) }}</td>
                                 <td>
@@ -103,7 +105,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">No products found.</td>
+                                <td colspan="9" class="text-center py-4 text-muted">No products found.</td>
                             </tr>
                         @endforelse
                     </tbody>

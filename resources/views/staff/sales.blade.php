@@ -31,7 +31,10 @@
                             <tr>
                                 <td class="ps-3 fw-bold">{{ $invoice->invoice_no }}</td>
                                 <td>{{ \Carbon\Carbon::parse($invoice->date)->format('M d, Y') }}</td>
-                                <td>{{ $invoice->customer->customer_name }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ $invoice->customer->customer_id ?? '---' }} - {{ $invoice->customer->hospital_name ?? '---' }}</div>
+                                    <small class="text-muted">{{ $invoice->customer->customer_name ?? '' }}</small>
+                                </td>
                                 <td>à§³ {{ number_format($invoice->net_payable, 2) }}</td>
                                 <td class="text-success">à§³ {{ number_format($invoice->received_amount, 2) }}</td>
                                 <td class="text-danger fw-bold">à§³ {{ number_format($invoice->due_amount, 2) }}</td>

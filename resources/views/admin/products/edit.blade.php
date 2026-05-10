@@ -43,14 +43,21 @@
                         </div>
 
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="model_no" class="form-label">Model No</label>
                                 <input type="text" class="form-control @error('model_no') is-invalid @enderror" id="model_no" name="model_no" value="{{ old('model_no', $product->model_no) }}">
                                 @error('model_no')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="pack_size" class="form-label">Pack Size</label>
+                                <input type="text" class="form-control @error('pack_size') is-invalid @enderror" id="pack_size" name="pack_size" value="{{ old('pack_size', $product->pack_size) }}">
+                                @error('pack_size')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
                                 <label for="category" class="form-label">Category</label>
                                 <input type="text" class="form-control @error('category') is-invalid @enderror" id="category" name="category" value="{{ old('category', $product->category) }}">
                                 @error('category')

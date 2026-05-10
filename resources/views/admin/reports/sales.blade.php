@@ -70,6 +70,48 @@
     </div>
 
     <!-- Sales Table -->
+    {{-- // PAYMENT FLOW IMPROVEMENT --}}
+    {{-- // REPORT TIMELINE --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Monthly Sales Timeline ({{ $reportYear }})</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Month</th>
+                            <th class="text-end">Invoices</th>
+                            <th class="text-end">Sales</th>
+                            <th class="text-end">Received</th>
+                            <th class="text-end pe-3">Due</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                            $months = [
+                                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+                            ];
+                        @endphp
+                        @foreach($months as $monthNumber => $monthName)
+                            @php $row = $monthlySales->get($monthNumber); @endphp
+                            <tr>
+                                <td class="ps-3 fw-bold">{{ $monthName }}</td>
+                                <td class="text-end">{{ (int) ($row->total_invoices ?? 0) }}</td>
+                                <td class="text-end">Tk. {{ number_format((float) ($row->total_sales ?? 0), 2) }}</td>
+                                <td class="text-end text-success">Tk. {{ number_format((float) ($row->total_received ?? 0), 2) }}</td>
+                                <td class="text-end pe-3 text-danger">Tk. {{ number_format((float) ($row->total_due ?? 0), 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -90,7 +132,10 @@
                             <tr>
                                 <td class="ps-3 fw-bold">{{ $invoice->invoice_no }}</td>
                                 <td>{{ \Carbon\Carbon::parse($invoice->date)->format('M d, Y') }}</td>
-                                <td>{{ $invoice->customer->customer_name }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ $invoice->customer->customer_id ?? '---' }} - {{ $invoice->customer->hospital_name ?? '---' }}</div>
+                                    <small class="text-muted">{{ $invoice->customer->customer_name ?? '' }}</small>
+                                </td>
                                 <td>৳ {{ number_format($invoice->net_payable, 2) }}</td>
                                 <td class="text-success">৳ {{ number_format($invoice->received_amount, 2) }}</td>
                                 <td class="text-danger fw-bold">৳ {{ number_format($invoice->due_amount, 2) }}</td>

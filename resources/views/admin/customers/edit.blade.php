@@ -17,7 +17,7 @@
         <div class="col-md-8">
             <div class="card shadow-sm">
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">Update Customer: {{ $customer->customer_name }}</h5>
+                    <h5 class="mb-0">Update Customer: {{ $customer->customer_id }} - {{ $customer->hospital_name }}</h5>
                 </div>
                 <div class="card-body">
                     {{-- // LOADING STATE FIX --}}
@@ -26,17 +26,27 @@
                         @method('PUT')
                         
                         <div class="row mb-3">
-                            <div class="col-md-12 mb-3">
-                                <label for="customer_name" class="form-label">Customer Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('customer_name') is-invalid @enderror" id="customer_name" name="customer_name" value="{{ old('customer_name', $customer->customer_name) }}" required>
-                                @error('customer_name')
+                            {{-- // CUSTOMER MODULE IMPROVEMENT --}}
+                            {{-- // CUSTOMER ID GENERATOR --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_id" class="form-label">Customer ID</label>
+                                <input type="text" class="form-control bg-light @error('customer_id') is-invalid @enderror" id="customer_id" name="customer_id" value="{{ old('customer_id', $customer->customer_id) }}" readonly>
+                                @error('customer_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">System generated and protected.</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="hospital_name" class="form-label">Organization / Hospital Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('hospital_name') is-invalid @enderror" id="hospital_name" name="hospital_name" value="{{ old('hospital_name', $customer->hospital_name) }}" required>
+                                @error('hospital_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="hospital_name" class="form-label">Hospital Name</label>
-                                <input type="text" class="form-control @error('hospital_name') is-invalid @enderror" id="hospital_name" name="hospital_name" value="{{ old('hospital_name', $customer->hospital_name) }}">
-                                @error('hospital_name')
+                                <label for="customer_name" class="form-label">Customer Name</label>
+                                <input type="text" class="form-control @error('customer_name') is-invalid @enderror" id="customer_name" name="customer_name" value="{{ old('customer_name', $customer->customer_name) }}">
+                                @error('customer_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,36 +10,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Invoice indexes for report performance
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->index('customer_id');
-            $table->index('date');
-        });
-
-        // Invoice items indexes for profit reports
-        Schema::table('invoice_items', function (Blueprint $table) {
-            $table->index('invoice_id');
-            $table->index('product_id');
-        });
-
-        // Stock history indexes
-        // Schema::table('stock_histories', function (Blueprint $table) {
-        //     $table->index('product_id');
-        //     $table->index('date');
-        // });
-
-        // Additional required indexes
-        Schema::table('products', function (Blueprint $table) {
-            $table->index('product_id');
-        });
-
-        Schema::table('customers', function (Blueprint $table) {
-            $table->index('mobile');
-        });
-
-        Schema::table('payments', function (Blueprint $table) {
-            $table->index('customer_id');
-        });
+        // Existing databases may already have some of these foreign-key indexes.
+        DB::statement('CREATE INDEX IF NOT EXISTS invoices_customer_id_index ON invoices (customer_id)');
+        DB::statement('CREATE INDEX IF NOT EXISTS invoices_date_index ON invoices (date)');
+        DB::statement('CREATE INDEX IF NOT EXISTS invoice_items_invoice_id_index ON invoice_items (invoice_id)');
+        DB::statement('CREATE INDEX IF NOT EXISTS invoice_items_product_id_index ON invoice_items (product_id)');
+        DB::statement('CREATE INDEX IF NOT EXISTS products_product_id_index ON products (product_id)');
+        DB::statement('CREATE INDEX IF NOT EXISTS customers_mobile_index ON customers (mobile)');
+        DB::statement('CREATE INDEX IF NOT EXISTS payments_customer_id_index ON payments (customer_id)');
     }
 
     /**
@@ -48,31 +25,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropIndex(['customer_id']);
-            $table->dropIndex(['date']);
-        });
-
-        Schema::table('invoice_items', function (Blueprint $table) {
-            $table->dropIndex(['invoice_id']);
-            $table->dropIndex(['product_id']);
-        });
-
-        Schema::table('stock_histories', function (Blueprint $table) {
-            $table->dropIndex(['product_id']);
-            $table->dropIndex(['date']);
-        });
-
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropIndex(['product_id']);
-        });
-
-        Schema::table('customers', function (Blueprint $table) {
-            $table->dropIndex(['mobile']);
-        });
-
-        Schema::table('payments', function (Blueprint $table) {
-            $table->dropIndex(['customer_id']);
-        });
+        DB::statement('DROP INDEX IF EXISTS invoices_customer_id_index');
+        DB::statement('DROP INDEX IF EXISTS invoices_date_index');
+        DB::statement('DROP INDEX IF EXISTS invoice_items_invoice_id_index');
+        DB::statement('DROP INDEX IF EXISTS invoice_items_product_id_index');
+        DB::statement('DROP INDEX IF EXISTS products_product_id_index');
+        DB::statement('DROP INDEX IF EXISTS customers_mobile_index');
+        DB::statement('DROP INDEX IF EXISTS payments_customer_id_index');
     }
 };

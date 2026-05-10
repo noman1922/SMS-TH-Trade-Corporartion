@@ -8,6 +8,8 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+// CUSTOMER PRICE MEMORY
+use App\Services\CustomerPricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -17,46 +19,99 @@ use Exception;
 
 class PosController extends Controller
 {
+    // CUSTOMER PRICE MEMORY
+    protected CustomerPricingService $pricingService;
+
+    public function __construct(CustomerPricingService $pricingService)
+    {
+        $this->pricingService = $pricingService;
+    }
+
     public function index()
     {
         // PERFORMANCE OPTIMIZATION
         // QUERY OPTIMIZATION
         // SUPABASE SPEED FIX
         $products = Product::where('stock_quantity', '>', 0)
-            ->select('id', 'product_id', 'product_name', 'stock_quantity')
+            ->select('id', 'product_id', 'product_name', 'selling_price', 'stock_quantity')
             ->orderBy('product_name')
             ->get();
 
+        // CUSTOMER_ID MIGRATION FIX
+        // SAFE CUSTOMER QUERY
         $customers = Customer::withSum('invoices', 'net_payable')
             ->withSum('payments', 'amount')
-            ->select('id', 'customer_name', 'mobile', 'address', 'previous_due')
+            ->select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name', 'mobile', 'address', 'previous_due']))
             ->orderBy('customer_name', 'asc')
             ->get();
         $invoice_no = 'INV-' . strtoupper(uniqid());
+
+        // DYNAMIC CUSTOMER PRICING
+        $userRole = auth()->user()->role;
         
-        return view('pos.index', compact('products', 'customers', 'invoice_no'));
+        return view('pos.index', compact('products', 'customers', 'invoice_no', 'userRole'));
     }
 
     /**
      * Return only safe fields — cost_price is never exposed to staff.
+     * DYNAMIC CUSTOMER PRICING — accepts optional customer_id to resolve customer-specific price.
      */
-    public function getProductDetails($id)
+    public function getProductDetails(Request $request, $id)
     {
         // QUERY OPTIMIZATION
         $product = Product::select('id', 'product_name', 'product_id', 'selling_price', 'stock_quantity')->findOrFail($id);
-        return response()->json([
+
+        $response = [
             'id' => $product->id,
             'product_name' => $product->product_name,
             'product_id' => $product->product_id,
             'selling_price' => $product->selling_price,
             'stock_quantity' => $product->stock_quantity,
+        ];
+
+        // CUSTOMER PRICE MEMORY
+        // DYNAMIC CUSTOMER PRICING
+        // If customer_id is provided, also return the customer-specific last price.
+        $customerId = $request->query('customer_id');
+        if ($customerId) {
+            $resolved = $this->pricingService->resolvePrice((int) $customerId, $product->id);
+            $response['customer_price'] = $resolved['price'];
+            $response['price_source'] = $resolved['source'];
+        }
+
+        return response()->json($response);
+    }
+
+    // CUSTOMER PRICE MEMORY
+    // API endpoint: get last price for a customer+product pair.
+    public function getCustomerProductPrice($customerId, $productId)
+    {
+        $resolved = $this->pricingService->resolvePrice((int) $customerId, (int) $productId);
+
+        return response()->json([
+            'price' => $resolved['price'],
+            'source' => $resolved['source'],
+        ]);
+    }
+
+    // CUSTOMER PRICE MEMORY
+    // Batch endpoint: refresh selected POS item prices when the customer changes.
+    public function getCustomerProductPrices(Request $request, $customerId)
+    {
+        $data = $request->validate([
+            'product_ids' => 'required|array|min:1',
+            'product_ids.*' => 'integer|exists:products,id',
+        ]);
+
+        return response()->json([
+            'prices' => $this->pricingService->resolvePricesForProducts((int) $customerId, $data['product_ids']),
         ]);
     }
 
     public function store(Request $request)
     {
         // POS INPUT UX FIX
-        foreach (['discount_percent', 'vat_percent', 'ait_percent', 'extra_charge'] as $field) {
+        foreach (['discount_percent', 'discount_value', 'vat_percent', 'ait_percent', 'extra_charge'] as $field) {
             if ($request->input($field) === '') {
                 $request->merge([$field => null]);
             }
@@ -67,7 +122,12 @@ class PosController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'discount_percent' => 'nullable|numeric|min:0|max:50',
+            // DYNAMIC CUSTOMER PRICING
+            'items.*.price' => 'nullable|numeric|min:0',
+            // DISCOUNT TYPE SYSTEM
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_percent' => 'nullable|numeric|min:0|max:100',
+            'discount_value' => 'nullable|numeric|min:0',
             'vat_percent' => 'nullable|numeric|min:0|max:100',
             'ait_percent' => 'nullable|numeric|min:0|max:100',
             'extra_charge' => 'nullable|numeric|min:0',
@@ -96,6 +156,10 @@ class PosController extends Controller
                     ->get()
                     ->keyBy('id');
 
+                // DYNAMIC CUSTOMER PRICING
+                // Determine user role for price validation
+                $isAdmin = auth()->user()->role === 'admin';
+
                 foreach ($request->items as $itemData) {
                     // 1. Use the already locked product row
                     $product = $products->get((int) $itemData['product_id']);
@@ -109,9 +173,21 @@ class PosController extends Controller
                         throw new Exception("Insufficient stock for product: {$product->product_name} (Available: {$product->stock_quantity})");
                     }
 
-                    // 3. Use server-side price (never trust frontend price)
+                    // 3. DYNAMIC CUSTOMER PRICING — Determine unit price
                     // FINANCIAL CALCULATION FIX
-                    $unitPrice = round((float) $product->selling_price, 2);
+                    if ($isAdmin && array_key_exists('price', $itemData) && $itemData['price'] !== null && $itemData['price'] !== '') {
+                        // Admin can set any price
+                        $unitPrice = round((float) $itemData['price'], 2);
+                    } else {
+                        // Staff: use customer-specific last price or product default
+                        // CUSTOMER PRICE MEMORY
+                        $resolved = $this->pricingService->resolvePrice(
+                            (int) $request->customer_id,
+                            $product->id
+                        );
+                        $unitPrice = round((float) $resolved['price'], 2);
+                    }
+
                     $costPrice = round((float) $product->cost_price, 2);
                     $item_total = round($unitPrice * (int) $itemData['quantity'], 2);
                     $sub_total = round($sub_total + $item_total, 2);
@@ -134,12 +210,25 @@ class PosController extends Controller
                 // 5. Recalculate all totals server-side (never trust frontend)
                 // POS INPUT UX FIX
                 // FINANCIAL CALCULATION FIX
+                // DISCOUNT TYPE SYSTEM
+                $discountType = $request->input('discount_type', 'percentage');
                 $discountPercent = round((float) ($request->input('discount_percent') ?? 0), 2);
                 $vatPercent = round((float) ($request->input('vat_percent') ?? 0), 2);
                 $aitPercent = round((float) ($request->input('ait_percent') ?? 0), 2);
                 $extra = round((float) ($request->input('extra_charge') ?? 0), 2);
 
-                $discount = round(($sub_total * $discountPercent) / 100, 2);
+                // DISCOUNT TYPE SYSTEM — Calculate discount based on type
+                if ($discountType === 'fixed') {
+                    $discountValue = round((float) ($request->input('discount_value') ?? 0), 2);
+                    // Cap fixed discount at subtotal to prevent negative bill
+                    $discount = round(min($discountValue, $sub_total), 2);
+                    // Store percent as 0 for fixed type, actual amount is in discount_amount
+                    $discountPercent = 0;
+                } else {
+                    // Percentage discount (existing behavior)
+                    $discount = round(($sub_total * $discountPercent) / 100, 2);
+                }
+
                 $vat = round(($sub_total * $vatPercent) / 100, 2);
                 $ait = round(($sub_total * $aitPercent) / 100, 2);
 
@@ -159,6 +248,9 @@ class PosController extends Controller
                     'user_id' => Auth::id(),
                     'sub_total' => $sub_total,
                     'discount_percent' => $discountPercent,
+                    // DISCOUNT TYPE SYSTEM
+                    'discount_type' => $discountType,
+                    'discount_amount' => $discount,
                     'vat_percent' => $vatPercent,
                     'ait_percent' => $aitPercent,
                     'extra_charge' => $extra,

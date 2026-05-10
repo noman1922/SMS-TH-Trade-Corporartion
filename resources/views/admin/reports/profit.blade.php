@@ -79,7 +79,10 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Month</th>
-                            <th class="text-end pe-3">Profit</th>
+                            <th class="text-end">Sales</th>
+                            <th class="text-end">Cost</th>
+                            <th class="text-end">Profit</th>
+                            <th class="text-end pe-3">Margin</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -90,10 +93,15 @@
                                 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
                             ];
                         @endphp
+                        {{-- // PAYMENT FLOW IMPROVEMENT --}}
+                        {{-- // REPORT TIMELINE --}}
                         @foreach($monthlyProfit as $item)
                             <tr>
                                 <td class="ps-3 fw-bold">{{ $months[$item->month] }}</td>
-                                <td class="text-end pe-3 text-success fw-bold">৳ {{ number_format($item->profit, 2) }}</td>
+                                <td class="text-end">Tk. {{ number_format($item->sales, 2) }}</td>
+                                <td class="text-end">Tk. {{ number_format($item->cost, 2) }}</td>
+                                <td class="text-end text-success fw-bold">Tk. {{ number_format($item->profit, 2) }}</td>
+                                <td class="text-end pe-3">{{ $item->sales > 0 ? number_format(($item->profit / $item->sales) * 100, 1) . '%' : '---' }}</td>
                             </tr>
                         @endforeach
                     </tbody>

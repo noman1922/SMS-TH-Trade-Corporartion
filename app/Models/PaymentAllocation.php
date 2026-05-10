@@ -21,4 +21,9 @@ class PaymentAllocation extends Model
     {
         return $this->belongsTo(Invoice::class);
     }
+
+    // DUE COLLECTION IMPROVEMENT
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
 }

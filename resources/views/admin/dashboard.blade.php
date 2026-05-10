@@ -144,7 +144,10 @@
                             @forelse($recentInvoices as $invoice)
                             <tr>
                                 <td class="px-4 fw-medium">{{ $invoice->invoice_no }}</td>
-                                <td>{{ $invoice->customer->customer_name }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ $invoice->customer->customer_id ?? '---' }}</div>
+                                    <small class="text-muted">{{ $invoice->customer->hospital_name ?? $invoice->customer->customer_name }}</small>
+                                </td>
                                 <td>৳ {{ number_format($invoice->net_payable, 2) }}</td>
                                 <td>
                                     @if($invoice->due_amount <= 0)
@@ -203,6 +206,78 @@
                 <a href="{{ route('reports.stock') }}" class="text-danger">View all {{ $lowStockCount }} items →</a>
             </div>
             @endif
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clipboard-check me-2"></i> Pending Product Requests</span>
+                <a href="{{ route('admin.approvals.index') }}" class="btn btn-sm btn-primary">Manage</a>
+            </div>
+            <div class="card-body p-0">
+                {{-- // STAFF PRODUCT REQUEST --}}
+                {{-- // PRODUCT APPROVAL FLOW --}}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Product</th>
+                                <th>Requested By</th>
+                                <th class="text-end pe-3">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($pendingProductRequests as $request)
+                                <tr>
+                                    <td class="ps-3 fw-bold">{{ $request->requested_product_name }}</td>
+                                    <td>{{ $request->requester->name ?? 'Staff' }}</td>
+                                    <td class="text-end pe-3">Tk. {{ number_format($request->requested_price, 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="3" class="text-center text-muted py-4">No pending product requests.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-tags me-2"></i> Pending Price Approvals</span>
+                <a href="{{ route('admin.approvals.index') }}" class="btn btn-sm btn-primary">Manage</a>
+            </div>
+            <div class="card-body p-0">
+                {{-- // STAFF PRICE RESTRICTION --}}
+                {{-- // PRICE APPROVAL SYSTEM --}}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Product</th>
+                                <th>Requested By</th>
+                                <th class="text-end pe-3">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($pendingPriceRequests as $request)
+                                <tr>
+                                    <td class="ps-3 fw-bold">{{ $request->product->product_name ?? 'Product' }}</td>
+                                    <td>{{ $request->requester->name ?? 'Staff' }}</td>
+                                    <td class="text-end pe-3">Tk. {{ number_format($request->requested_price, 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="3" class="text-center text-muted py-4">No pending price approvals.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

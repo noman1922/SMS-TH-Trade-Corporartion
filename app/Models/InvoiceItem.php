@@ -26,4 +26,16 @@ class InvoiceItem extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    // CUSTOMER PRICE MEMORY
+    // Scope to find the latest invoice item for a specific customer+product combination.
+    public function scopeForCustomerProduct($query, int $customerId, int $productId)
+    {
+        return $query->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->where('invoices.customer_id', $customerId)
+            ->where('invoice_items.product_id', $productId)
+            ->orderByDesc('invoices.date')
+            ->orderByDesc('invoices.id')
+            ->select('invoice_items.unit_price');
+    }
 }

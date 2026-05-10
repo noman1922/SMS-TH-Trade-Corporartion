@@ -28,6 +28,22 @@
                 <i class="bi bi-box-seam"></i> Products
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{{ route('admin.approvals.index') }}" class="nav-link {{ request()->routeIs('admin.approvals.*') || request()->routeIs('admin.productRequests.*') || request()->routeIs('admin.priceRequests.*') ? 'active' : '' }}">
+                <i class="bi bi-clipboard-check"></i> Approvals
+            </a>
+        </li>
+        @else
+        <li class="nav-item">
+            <a href="{{ route('staff.productRequests.index') }}" class="nav-link {{ request()->routeIs('staff.productRequests.*') ? 'active' : '' }}">
+                <i class="bi bi-plus-square"></i> Product Requests
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('staff.priceRequests.index') }}" class="nav-link {{ request()->routeIs('staff.priceRequests.*') ? 'active' : '' }}">
+                <i class="bi bi-tags"></i> Price Requests
+            </a>
+        </li>
         @endif
         <li class="nav-item">
             <a href="{{ route('stock.index') }}" class="nav-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">

@@ -22,17 +22,23 @@ class CustomerRequest extends FormRequest
      */
     public function rules(): array
     {
-        $customerId = $this->route('customer');
+        $customer = $this->route('customer');
 
         return [
-            'customer_name' => ['required', 'string', 'max:255'],
-            'hospital_name' => ['nullable', 'string', 'max:255'],
+            // CUSTOMER MODULE IMPROVEMENT
+            'customer_id' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'customer_name' => ['nullable', 'string', 'max:255'],
+            'hospital_name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string'],
             'mobile' => [
                 'required', 
                 'string', 
                 'max:20', 
-                Rule::unique('customers', 'mobile')->ignore($customerId)
+                Rule::unique('customers', 'mobile')->ignore($customer)
             ],
             'previous_due' => ['required', 'numeric', 'min:0'],
         ];

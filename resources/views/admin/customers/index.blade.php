@@ -25,7 +25,7 @@
                     {{-- // SEARCH INPUT OPTIMIZATION --}}
                     <form action="{{ route('customers.index') }}" method="GET" class="js-debounce-search" data-debounce="400" data-loading-text="Searching...">
                         <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="Search by name or mobile..." value="{{ $search ?? '' }}">
+                            <input type="text" name="search" class="form-control" placeholder="Search by ID, organization, name, or mobile..." value="{{ $search ?? '' }}">
                             <button class="btn btn-outline-secondary" type="submit">
                                 <i class="bi bi-search"></i>
                             </button>
@@ -40,7 +40,9 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Name</th>
-                            <th>Hospital</th>
+                            {{-- // CUSTOMER MODULE IMPROVEMENT --}}
+                            <th>Customer ID</th>
+                            <th>Organization / Hospital</th>
                             <th>Mobile</th>
                             <th>Address</th>
                             <th>Invoices</th>
@@ -52,8 +54,9 @@
                         @forelse($customers as $customer)
                             <tr>
                                 <td class="ps-3">
-                                    <div class="fw-bold">{{ $customer->customer_name }}</div>
+                                    <div class="fw-bold">{{ $customer->customer_name ?: '---' }}</div>
                                 </td>
+                                <td><span class="badge bg-light text-dark border">{{ $customer->customer_id }}</span></td>
                                 <td>{{ $customer->hospital_name ?? '---' }}</td>
                                 <td>{{ $customer->mobile }}</td>
                                 <td><small class="text-muted">{{ Str::limit($customer->address, 30) }}</small></td>
@@ -90,7 +93,7 @@
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        Are you sure you want to delete customer <strong>{{ $customer->customer_name }}</strong>?
+                                                        Are you sure you want to delete customer <strong>{{ $customer->customer_id }} - {{ $customer->hospital_name }}</strong>?
                                                         <p class="text-danger mt-2 small"><i class="bi bi-exclamation-triangle-fill"></i> This action cannot be undone and may fail if the customer has invoices.</p>
                                                     </div>
                                                     <div class="modal-footer">
@@ -109,7 +112,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">No customers found.</td>
+                                <td colspan="8" class="text-center py-4 text-muted">No customers found.</td>
                             </tr>
                         @endforelse
                     </tbody>

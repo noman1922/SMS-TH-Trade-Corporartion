@@ -18,16 +18,25 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-
+        // CUSTOMER_ID MIGRATION FIX
+        // SAFE CUSTOMER QUERY
         $customers = Customer::query()
             ->when($search, function ($query, $search) {
-                return $query->where('customer_name', 'like', "%{$search}%")
-                             ->orWhere('mobile', 'like', "%{$search}%");
+                // CUSTOMER MODULE IMPROVEMENT
+                return $query->where(function ($query) use ($search) {
+                    if (Customer::hasCustomerIdColumn()) {
+                        $query->where('customer_id', 'like', "%{$search}%");
+                    }
+
+                    $query->orWhere('customer_name', 'like', "%{$search}%")
+                        ->orWhere('hospital_name', 'like', "%{$search}%")
+                        ->orWhere('mobile', 'like', "%{$search}%");
+                });
             })
             ->withCount('invoices')
             ->withSum('invoices', 'net_payable')
             ->withSum('payments', 'amount')
-            ->orderBy('customer_name', 'asc')
+            ->orderBy(Customer::displayOrderColumn(), 'asc')
             ->paginate(10)
             ->withQueryString();
 
@@ -39,7 +48,11 @@ class CustomerController extends Controller
      */
     public function create()
     {
-        return view('admin.customers.create');
+        // CUSTOMER MODULE IMPROVEMENT
+        // CUSTOMER ID GENERATOR
+        $nextCustomerId = Customer::generateNextCustomerId();
+
+        return view('admin.customers.create', compact('nextCustomerId'));
     }
 
     /**
@@ -49,7 +62,17 @@ class CustomerController extends Controller
     {
         try {
             DB::transaction(function () use ($request) {
-                Customer::create($request->validated());
+                // CUSTOMER MODULE IMPROVEMENT
+                // CUSTOMER ID GENERATOR
+                $data = $request->validated();
+                // CUSTOMER_ID MIGRATION FIX
+                if (Customer::hasCustomerIdColumn()) {
+                    $data['customer_id'] = Customer::generateNextCustomerId();
+                } else {
+                    unset($data['customer_id']);
+                }
+
+                Customer::create($data);
             });
 
             return redirect()->route('customers.index')
@@ -79,7 +102,63 @@ class CustomerController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('admin.customers.show', compact('customer', 'invoices'));
+        // CUSTOMER TIMELINE
+        $invoiceTimeline = $customer->invoices()
+            ->with(['user:id,name', 'items.product:id,product_id,product_name'])
+            ->select('id', 'invoice_no', 'customer_id', 'user_id', 'net_payable', 'date', 'created_at')
+            ->get()
+            ->flatMap(function ($invoice) {
+                $items = $invoice->items->pluck('product.product_name')->filter()->take(3)->implode(', ');
+
+                return [
+                    [
+                        'datetime' => $invoice->created_at,
+                        'date' => $invoice->date,
+                        'type' => 'Invoice',
+                        'title' => 'Invoice ' . $invoice->invoice_no,
+                        'description' => 'Sales amount ৳' . number_format($invoice->net_payable, 2) . ($items ? ' for ' . $items : ''),
+                        'user' => $invoice->user->name ?? 'System',
+                    ],
+                    [
+                        'datetime' => $invoice->created_at,
+                        'date' => $invoice->date,
+                        'type' => 'Stock Sale',
+                        'title' => 'Stock OUT via ' . $invoice->invoice_no,
+                        'description' => $items ?: 'Invoice stock movement recorded',
+                        'user' => $invoice->user->name ?? 'System',
+                    ],
+                ];
+            });
+
+        $paymentTimeline = $customer->payments()
+            ->with('user:id,name')
+            ->select('id', 'customer_id', 'invoice_id', 'amount', 'payment_type', 'payment_method', 'date', 'note', 'created_by', 'created_at')
+            ->get()
+            ->map(function ($payment) {
+                return [
+                    'datetime' => $payment->created_at,
+                    'date' => $payment->date,
+                    'type' => $payment->invoice_id ? 'Due Collection' : 'Payment',
+                    'title' => ($payment->invoice_id ? 'Due Collection' : 'Payment') . ' #' . $payment->id,
+                    'description' => 'Received ৳' . number_format($payment->amount, 2) . ' by ' . ucfirst($payment->payment_method) . ($payment->note ? ' - ' . $payment->note : ''),
+                    'user' => $payment->user->name ?? 'System',
+                ];
+            });
+
+        $timeline = collect([[
+                'datetime' => $customer->created_at,
+                'date' => $customer->created_at,
+                'type' => 'Customer Created',
+                'title' => 'Customer profile created',
+                'description' => 'Opening balance ৳' . number_format($customer->previous_due, 2),
+                'user' => 'System',
+            ]])
+            ->concat($invoiceTimeline)
+            ->concat($paymentTimeline)
+            ->sortByDesc('datetime')
+            ->values();
+
+        return view('admin.customers.show', compact('customer', 'invoices', 'timeline'));
     }
 
     /**
@@ -97,7 +176,11 @@ class CustomerController extends Controller
     {
         try {
             DB::transaction(function () use ($request, $customer) {
-                $customer->update($request->validated());
+                // CUSTOMER MODULE IMPROVEMENT
+                $data = $request->validated();
+                unset($data['customer_id']);
+
+                $customer->update($data);
             });
 
             return redirect()->route('customers.index')

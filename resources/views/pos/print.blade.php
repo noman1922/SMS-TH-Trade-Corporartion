@@ -6,287 +6,336 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice - {{ $invoice->invoice_no }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* // INVOICE PRINT REDESIGN */
+        /* // A4 PRINT LAYOUT */
+        /* // ERP STYLE INVOICE */
         * {
             box-sizing: border-box;
         }
 
         body {
-            background: #e2e8f0;
-            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background: #d9d9d9;
             color: #111;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .print-actions {
+            margin: 18px 0;
+            text-align: center;
         }
 
         .invoice-page {
-            background: #fff;
-            max-width: 210mm;
+            width: 210mm;
             min-height: 297mm;
-            margin: 20px auto;
-            padding: 28px 36px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-            position: relative;
-            /* // FOOTER POSITION FIX */
-            /* // INVOICE FOOTER FIX */
+            margin: 0 auto 20px;
+            padding: 42mm 12mm 12mm;
+            background: #fff;
+            box-shadow: 0 3px 18px rgba(0, 0, 0, 0.18);
             display: flex;
             flex-direction: column;
         }
 
-        .invoice-content {
-            /* // FOOTER POSITION FIX */
-            /* // INVOICE FOOTER FIX */
-            flex: 0 0 auto;
+        .invoice-body {
+            flex: 1 0 auto;
         }
 
-        /* Header */
-        .invoice-header {
-            /* // PRINT LAYOUT FIX */
+        .invoice-title-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: end;
+            gap: 12px;
             border-bottom: 2px solid #111;
-            padding-bottom: 14px;
-            margin-bottom: 16px;
-        }
-
-        .company-name {
-            /* // PROFESSIONAL INVOICE STYLE */
-            font-size: 1.45rem;
-            font-weight: 700;
-            color: #111;
-            letter-spacing: 1px;
-        }
-
-        .company-tagline {
-            color: #333;
-            font-size: 0.78rem;
-            margin-top: 2px;
-        }
-
-        .company-contact {
-            font-size: 0.72rem;
-            color: #333;
-            line-height: 1.35;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .invoice-title {
-            font-size: 1.25rem;
+            margin: 0;
+            font-size: 18px;
             font-weight: 700;
-            color: #111;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .invoice-meta {
-            font-size: 0.78rem;
-            color: #333;
-        }
-
-        .invoice-meta strong {
-            color: #111;
-        }
-
-        /* Billing Section */
-        .billing-section {
-            /* // PROFESSIONAL INVOICE STYLE */
-            background: #fff;
-            border: 0;
-            border-radius: 0;
-            padding: 0;
-            margin-bottom: 16px;
-        }
-
-        .billing-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .billing-name {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #111;
-        }
-
-        .billing-detail {
-            font-size: 0.78rem;
-            color: #333;
-        }
-
-        /* Items Table */
-        .items-table {
             width: 100%;
             border-collapse: collapse;
-            /* // PRINT TABLE BORDER FIX */
-            margin-bottom: 14px;
-            border: 1px solid #777;
         }
 
-        .items-table thead th {
-            background: #fff;
-            color: #111;
-            padding: 7px 8px;
-            font-size: 0.68rem;
+        .invoice-meta td {
+            padding: 1px 0 1px 8px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .invoice-meta td:first-child {
+            color: #333;
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .invoice-box {
+            border: 1px solid #111;
+            margin-bottom: 8px;
+        }
+
+        .invoice-box-title {
+            border-bottom: 1px solid #111;
+            padding: 3px 6px;
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            background: #f4f4f4;
+        }
+
+        .customer-grid {
+            display: grid;
+            grid-template-columns: 1.45fr 0.9fr;
+            gap: 0;
+        }
+
+        .customer-panel {
+            padding: 6px;
+            min-height: 72px;
+        }
+
+        .customer-panel + .customer-panel {
+            border-left: 1px solid #111;
+        }
+
+        .info-line {
+            display: grid;
+            grid-template-columns: 76px 1fr;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: #222;
+        }
+
+        .info-value {
+            color: #111;
+        }
+
+        .status-text {
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .items-table,
+        .totals-table,
+        .timeline-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items-table {
+            border: 1px solid #111;
+            margin-bottom: 8px;
+        }
+
+        .items-table th {
+            border: 1px solid #111;
+            padding: 4px 5px;
+            background: #f4f4f4;
+            font-size: 10px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .items-table td {
             border: 1px solid #555;
+            padding: 4px 5px;
+            vertical-align: top;
+            font-size: 10.5px;
         }
 
-        .items-table thead th:first-child {
-            border-radius: 0;
+        .items-table .description {
+            line-height: 1.25;
         }
 
-        .items-table thead th:last-child {
-            border-radius: 0;
+        .product-name {
+            font-weight: 700;
         }
 
-        .items-table tbody td {
-            padding: 6px 8px;
-            /* // PRINT TABLE BORDER FIX */
-            border: 1px solid #bbb;
-            font-size: 0.76rem;
+        .model-no {
+            display: block;
+            margin-top: 2px;
+            font-size: 9.5px;
+            color: #333;
         }
 
-        .items-table tbody tr:nth-child(even) {
-            background: #fff;
+        .amount-row {
+            display: grid;
+            grid-template-columns: 1fr 78mm;
+            gap: 10mm;
+            align-items: start;
+            margin-top: 6px;
         }
 
-        .items-table tbody tr:last-child td {
-            border-bottom: 1px solid #777;
+        .amount-words {
+            border: 1px solid #111;
+            min-height: 34px;
+            padding: 6px;
         }
 
-        /* Totals */
-        .totals-section {
-            margin-left: auto;
-            width: 300px;
+        .amount-words-title {
+            margin-bottom: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
         .totals-table {
-            width: 100%;
+            border: 1px solid #111;
         }
 
         .totals-table td {
-            padding: 3px 0;
-            font-size: 0.78rem;
-            color: #222;
-            font-weight: 400;
+            border-bottom: 1px solid #c5c5c5;
+            padding: 3px 6px;
+            font-size: 10.5px;
+        }
+
+        .totals-table td:first-child {
+            font-weight: 700;
         }
 
         .totals-table td:last-child {
+            width: 32mm;
             text-align: right;
-            font-weight: 400;
-            color: #111;
+            white-space: nowrap;
         }
 
-        .totals-table .grand-total td {
+        .totals-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .totals-table .net-row td,
+        .totals-table .due-row td {
             border-top: 1px solid #111;
-            font-size: 0.78rem;
-            font-weight: 400;
-            padding-top: 5px;
-            color: #111;
-        }
-
-        .totals-table .paid td {
-            color: #111;
-        }
-
-        .totals-table .due td {
-            color: #111;
+            font-size: 11px;
             font-weight: 700;
         }
 
-        .totals-table .total-payable td,
-        .totals-table .final-due td {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #111;
-        }
-
-        /* Footer */
-        .invoice-footer {
-            /* // PRINT LAYOUT FIX */
-            /* // FOOTER POSITION FIX */
-            position: relative;
-            bottom: auto;
-            left: auto;
-            right: auto;
-            margin-top: auto;
-            padding-top: 38px;
-            flex-shrink: 0;
+        .timeline-section {
+            margin-top: 9px;
             page-break-inside: avoid;
             break-inside: avoid;
         }
 
+        .timeline-table {
+            border: 1px solid #111;
+        }
+
+        .timeline-table th,
+        .timeline-table td {
+            border: 1px solid #777;
+            padding: 3px 5px;
+            font-size: 10px;
+        }
+
+        .timeline-table th {
+            background: #f4f4f4;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .closing-note {
+            margin-top: 8px;
+            border-top: 1px solid #111;
+            border-bottom: 1px solid #111;
+            padding: 5px 0;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .invoice-footer {
+            flex-shrink: 0;
+            margin-top: auto;
+            padding-top: 22mm;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 34mm;
+            align-items: end;
+        }
+
+        .signature-block {
+            min-height: 24mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
         .signature-line {
             border-top: 1px solid #111;
-            width: 180px;
             padding-top: 5px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: #111;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 700;
         }
 
-        .footer-note {
-            border-top: 1px solid #ddd;
-            padding-top: 8px;
-            margin-top: 22px;
+        .signature-hint {
+            margin-top: 3px;
             text-align: center;
+            font-size: 9px;
             color: #333;
-            font-size: 0.68rem;
         }
 
-        /* Print Actions */
-        .print-actions {
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
             text-align: center;
-            margin: 20px 0;
+        }
+
+        .nowrap {
+            white-space: nowrap;
         }
 
         @media print {
-            /* // PRINT LAYOUT FIX */
             @page {
                 size: A4;
-                margin: 10mm;
+                margin: 0;
             }
 
             body {
                 background: #fff;
-                margin: 0;
-                padding: 0;
                 color: #111;
-            }
-
-            .invoice-page {
-                box-shadow: none;
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                max-width: 100%;
-                min-height: calc(297mm - 20mm);
-            }
-
-            .invoice-content {
-                flex: 0 0 auto;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .print-actions {
                 display: none !important;
             }
 
-            .page-break {
-                page-break-before: avoid;
+            .invoice-page {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 42mm 12mm 12mm;
+                box-shadow: none;
             }
 
-            .invoice-header,
-            .billing-section,
-            .totals-section,
-            .invoice-footer {
-                break-inside: avoid;
-                page-break-inside: avoid;
+            thead {
+                display: table-header-group;
             }
 
-            table {
-                page-break-inside: auto;
+            tfoot {
+                display: table-footer-group;
             }
 
             tr {
@@ -294,205 +343,316 @@
                 break-inside: avoid;
             }
 
-            thead {
-                display: table-header-group;
-            }
-
+            .invoice-title-row,
+            .invoice-box,
+            .amount-row,
+            .timeline-section,
+            .closing-note,
             .invoice-footer {
-                /* // FOOTER POSITION FIX */
-                margin-top: auto;
-                padding-top: 28px;
-            }
-
-            * {
-                color: #111 !important;
-                background: #fff !important;
-                box-shadow: none !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
         }
     </style>
 </head>
 
 <body>
-
     <div class="print-actions">
-        {{-- // LOADING STATE FIX --}}
-        <button onclick="handlePrintClick(this)" class="btn btn-primary btn-lg px-5 shadow">
-            <i class="bi bi-printer me-2"></i> Print Invoice
+        <button onclick="handlePrintClick(this)" class="btn btn-dark px-5">
+            Print Invoice
         </button>
-        <a href="{{ route('pos.index') }}" class="btn btn-secondary btn-lg px-4 shadow ms-2">Back to POS</a>
+        <a href="{{ route('pos.index') }}" class="btn btn-secondary px-4 ms-2">Back to POS</a>
     </div>
 
+    @php
+        // FINANCIAL CALCULATION FIX
+        // CRITICAL ACCOUNTING FIX
+        // DUE CALCULATION FIX
+        // INVOICE PRINT DATA FIX
+        // INVOICE PRINT REDESIGN
+        $subTotal = round((float) $invoice->sub_total, 2);
+        // DISCOUNT TYPE SYSTEM
+        $discountType = $invoice->discount_type ?? 'percentage';
+        $discountAmount = $discountType === 'fixed'
+            ? round((float) $invoice->discount_amount, 2)
+            : round(($subTotal * (float) $invoice->discount_percent) / 100, 2);
+        $vatAmount = round(($subTotal * (float) $invoice->vat_percent) / 100, 2);
+        $aitAmount = round(($subTotal * (float) $invoice->ait_percent) / 100, 2);
+        $extraCharge = round((float) $invoice->extra_charge, 2);
+        $currentInvoice = round((float) $invoice->net_payable, 2);
+        $paidAmount = round((float) $invoice->received_amount, 2);
+        $finalDue = round(max(0, (float) $invoice->due_amount), 2);
+        $totalPayable = round($paidAmount + $finalDue, 2);
+        $previousDue = round(max(0, $totalPayable - $currentInvoice), 2);
+        $paymentAllocations = $invoice->allocations()->with(['payment.user'])->orderBy('created_at')->get();
+
+        $numberWords = [
+            0 => 'Zero', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four', 5 => 'Five', 6 => 'Six',
+            7 => 'Seven', 8 => 'Eight', 9 => 'Nine', 10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve',
+            13 => 'Thirteen', 14 => 'Fourteen', 15 => 'Fifteen', 16 => 'Sixteen', 17 => 'Seventeen',
+            18 => 'Eighteen', 19 => 'Nineteen', 20 => 'Twenty', 30 => 'Thirty', 40 => 'Forty',
+            50 => 'Fifty', 60 => 'Sixty', 70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety'
+        ];
+
+        $toWords = function ($number) use (&$toWords, $numberWords) {
+            $number = (int) $number;
+
+            if ($number < 21) {
+                return $numberWords[$number];
+            }
+
+            if ($number < 100) {
+                $tens = ((int) floor($number / 10)) * 10;
+                $rest = $number % 10;
+                return $numberWords[$tens] . ($rest ? ' ' . $numberWords[$rest] : '');
+            }
+
+            if ($number < 1000) {
+                $hundreds = (int) floor($number / 100);
+                $rest = $number % 100;
+                return $numberWords[$hundreds] . ' Hundred' . ($rest ? ' ' . $toWords($rest) : '');
+            }
+
+            if ($number < 100000) {
+                $thousands = (int) floor($number / 1000);
+                $rest = $number % 1000;
+                return $toWords($thousands) . ' Thousand' . ($rest ? ' ' . $toWords($rest) : '');
+            }
+
+            if ($number < 10000000) {
+                $lakhs = (int) floor($number / 100000);
+                $rest = $number % 100000;
+                return $toWords($lakhs) . ' Lakh' . ($rest ? ' ' . $toWords($rest) : '');
+            }
+
+            $crores = (int) floor($number / 10000000);
+            $rest = $number % 10000000;
+            return $toWords($crores) . ' Crore' . ($rest ? ' ' . $toWords($rest) : '');
+        };
+
+        $wholeAmount = (int) floor($finalDue);
+        $paisaAmount = (int) round(($finalDue - $wholeAmount) * 100);
+        $amountInWords = $toWords($wholeAmount) . ' Taka';
+        if ($paisaAmount > 0) {
+            $amountInWords .= ' and ' . $toWords($paisaAmount) . ' Paisa';
+        }
+        $amountInWords .= ' Only';
+    @endphp
+
     <div class="invoice-page">
-        <div class="invoice-content">
-        <!-- Header -->
-        <div class="invoice-header">
-            <div class="row align-items-start">
-                <div class="col-7">
-                    <div class="company-name">TH TRADE CORPORATION</div>
-                    <div class="company-tagline">Specialized Medical Equipment Supplier</div>
-                    <div class="company-contact mt-2">
-                        Dhaka, Bangladesh<br>
-                        Phone: +880-XXXX-XXXXXX<br>
-                        Email: info@thtradecorp.com
-                    </div>
+        <div class="invoice-body">
+            <div class="invoice-title-row">
+                <div>
+                    <h1 class="invoice-title">Invoice</h1>
                 </div>
-                <div class="col-5 text-end">
-                    <div class="invoice-title">Invoice</div>
-                    <div class="invoice-meta mt-2">
-                        <strong>Invoice #:</strong> {{ $invoice->invoice_no }}<br>
-                        <strong>Date:</strong> {{ date('d M, Y', strtotime($invoice->date)) }}<br>
-                        <strong>Prepared by:</strong> {{ $invoice->user->name }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Billing Section -->
-        <div class="billing-section">
-            <div class="row">
-                <div class="col-6">
-                    <div class="billing-label">Bill To</div>
-                    <div class="billing-name">{{ $invoice->customer->customer_name }}</div>
-                    @if($invoice->customer->hospital_name)
-                        <div class="billing-detail">{{ $invoice->customer->hospital_name }}</div>
-                    @endif
-                    <div class="billing-detail">{{ $invoice->customer->mobile }}</div>
-                    <div class="billing-detail">{{ $invoice->customer->address }}</div>
-                </div>
-                <div class="col-6 text-end">
-                    <div class="billing-label">Payment Status</div>
-                    @if($invoice->due_amount <= 0)
-                        {{-- // PROFESSIONAL INVOICE STYLE --}}
-                        <span style="color: #111; font-weight: 600; font-size: 0.9rem;">PAID</span>
-                    @elseif($invoice->received_amount > 0)
-                        <span style="color: #111; font-weight: 600; font-size: 0.9rem;">PARTIAL</span>
-                    @else
-                        <span style="color: #111; font-weight: 600; font-size: 0.9rem;">UNPAID</span>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- Items Table -->
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th width="50">SL</th>
-                    <th>Product Description</th>
-                    <th class="text-center" width="80">Qty</th>
-                    <th class="text-end" width="130">Unit Price</th>
-                    <th class="text-end" width="130">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($invoice->items as $index => $item)
+                <table class="invoice-meta">
                     <tr>
-                        <td>{{ $index + 1 }}</td>
+                        <td>Invoice No:</td>
+                        <td>{{ $invoice->invoice_no }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date:</td>
+                        <td>{{ \Carbon\Carbon::parse($invoice->date)->format('d M, Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td>Status:</td>
                         <td>
-                            {{ $item->product->product_name }}
-                            @if($item->product->model_no)
-                                <br><small style="color: #333;">Model: {{ $item->product->model_no }}</small>
+                            <span class="status-text">
+                                @if($finalDue <= 0)
+                                    Paid
+                                @elseif($paidAmount > 0)
+                                    Partial
+                                @else
+                                    Unpaid
+                                @endif
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="invoice-box">
+                <div class="invoice-box-title">Customer & Approval Information</div>
+                <div class="customer-grid">
+                    <div class="customer-panel">
+                        <div class="info-line">
+                            <div class="info-label">Customer ID</div>
+                            <div class="info-value">{{ $invoice->customer->customer_id }}</div>
+                        </div>
+                        <div class="info-line">
+                            <div class="info-label">Customer</div>
+                            <div class="info-value"><strong>{{ $invoice->customer->customer_name ?: 'N/A' }}</strong></div>
+                        </div>
+                        @if($invoice->customer->hospital_name)
+                            <div class="info-line">
+                            <div class="info-label">Hospital</div>
+                            <div class="info-value">{{ $invoice->customer->hospital_name }}</div>
+                            </div>
+                        @endif
+                        <div class="info-line">
+                            <div class="info-label">Mobile</div>
+                            <div class="info-value">{{ $invoice->customer->mobile }}</div>
+                        </div>
+                        <div class="info-line">
+                            <div class="info-label">Address</div>
+                            <div class="info-value">{{ $invoice->customer->address }}</div>
+                        </div>
+                    </div>
+                    <div class="customer-panel">
+                        <div class="info-line">
+                            <div class="info-label">Entered By</div>
+                            <div class="info-value">{{ $invoice->user->name }}</div>
+                        </div>
+                        <div class="info-line">
+                            <div class="info-label">Approved By</div>
+                            <div class="info-value">Authorized Person</div>
+                        </div>
+                        <div class="info-line">
+                            <div class="info-label">Printed On</div>
+                            <div class="info-value">{{ now()->format('d M, Y h:i A') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 9mm;">SL</th>
+                        <th style="width: 27mm;">Product Code</th>
+                        <th>Product Description</th>
+                        <th style="width: 22mm;">Pack Size</th>
+                        <th style="width: 14mm;">Qty</th>
+                        <th style="width: 25mm;">Unit Price</th>
+                        <th style="width: 28mm;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($invoice->items as $index => $item)
+                        <tr>
+                            <td class="text-center">{{ $index + 1 }}</td>
+                            <td>{{ $item->product->product_id }}</td>
+                            <td class="description">
+                                <span class="product-name">{{ $item->product->product_name }}</span>
+                                @if($item->product->model_no)
+                                    <span class="model-no">Model No: {{ $item->product->model_no }}</span>
+                                @endif
+                            </td>
+                            <td class="text-center">{{ $item->product->pack_size ?? '-' }}</td>
+                            <td class="text-center">{{ $item->quantity }}</td>
+                            <td class="text-right nowrap">Tk. {{ number_format($item->unit_price, 2) }}</td>
+                            <td class="text-right nowrap">Tk. {{ number_format($item->total_price, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <div class="amount-row">
+                <div class="amount-words">
+                    <div class="amount-words-title">Amount in Words</div>
+                    {{ $amountInWords }}
+                </div>
+
+                <table class="totals-table">
+                    <tr>
+                        <td>Total Amount</td>
+                        <td>Tk. {{ number_format($subTotal, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            @if($discountType === 'fixed')
+                                Discount (Fixed)
+                            @else
+                                Discount @ {{ number_format((float) $invoice->discount_percent, 2) }}%
                             @endif
                         </td>
-                        <td class="text-center">{{ $item->quantity }}</td>
-                        <td class="text-end">৳ {{ number_format($item->unit_price, 2) }}</td>
-                        <td class="text-end">৳ {{ number_format($item->total_price, 2) }}</td>
+                        <td>- Tk. {{ number_format($discountAmount, 2) }}</td>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <!-- Totals -->
-        <div class="totals-section">
-            <table class="totals-table">
-                <tr>
-                    <td>Subtotal:</td>
-                    <td>৳ {{ number_format($invoice->sub_total, 2) }}</td>
-                </tr>
-                @if($invoice->discount_percent > 0)
                     <tr>
-                        <td>Discount ({{ $invoice->discount_percent }}%):</td>
-                        <td>- ৳
-                            {{ number_format(($invoice->sub_total * $invoice->discount_percent) / 100, 2) }}
-                        </td>
+                        <td>VAT @ {{ number_format((float) $invoice->vat_percent, 2) }}%</td>
+                        <td>+ Tk. {{ number_format($vatAmount, 2) }}</td>
                     </tr>
-                @endif
-                @if($invoice->vat_percent > 0)
                     <tr>
-                        <td>VAT ({{ $invoice->vat_percent }}%):</td>
-                        <td>+ ৳ {{ number_format(($invoice->sub_total * $invoice->vat_percent) / 100, 2) }}</td>
+                        <td>AIT @ {{ number_format((float) $invoice->ait_percent, 2) }}%</td>
+                        <td>+ Tk. {{ number_format($aitAmount, 2) }}</td>
                     </tr>
-                @endif
-                @if($invoice->ait_percent > 0)
                     <tr>
-                        <td>AIT ({{ $invoice->ait_percent }}%):</td>
-                        <td>+ ৳ {{ number_format(($invoice->sub_total * $invoice->ait_percent) / 100, 2) }}</td>
+                        <td>Extra Charges</td>
+                        <td>+ Tk. {{ number_format($extraCharge, 2) }}</td>
                     </tr>
-                @endif
-                @if($invoice->extra_charge > 0)
                     <tr>
-                        <td>Extra Charge:</td>
-                        <td>+ ৳ {{ number_format($invoice->extra_charge, 2) }}</td>
+                        <td>Previous Due</td>
+                        <td>+ Tk. {{ number_format($previousDue, 2) }}</td>
                     </tr>
-                @endif
-                @php
-                    // FINANCIAL CALCULATION FIX
-                    // CRITICAL ACCOUNTING FIX
-                    // DUE CALCULATION FIX
-                    // INVOICE PRINT DATA FIX
-                    $current_invoice = round((float) $invoice->net_payable, 2);
-                    $paid_amount = round((float) $invoice->received_amount, 2);
-                    $final_due = round(max(0, (float) $invoice->due_amount), 2);
-                    $total_payable = round($paid_amount + $final_due, 2);
-                    $previous_due = round(max(0, $total_payable - $current_invoice), 2);
-                @endphp
-                <tr class="grand-total">
-                    <td>Current Invoice:</td>
-                    <td>৳ {{ number_format($current_invoice, 2) }}</td>
-                </tr>
-                <tr>
-                    <td style="padding-top: 5px;">Previous Due:</td>
-                    <td style="padding-top: 5px;">+ ৳
-                        {{ number_format($previous_due, 2) }}
-                    </td>
-                </tr>
-                <tr class="total-payable">
-                    <td
-                        style="padding-top: 6px; border-top: 1px solid #111;">
-                        Total Payable:</td>
-                    <td
-                        style="padding-top: 6px; border-top: 1px solid #111;">
-                        ৳ {{ number_format($total_payable, 2) }}</td>
-                </tr>
-                <tr class="paid">
-                    <td style="padding-top: 5px;">Paid Amount:</td>
-                    <td style="padding-top: 5px;">- ৳ {{ number_format($paid_amount, 2) }}</td>
-                </tr>
-                <tr class="final-due">
-                    <td style="padding-top: 7px;">Final Due:</td>
-                    <td style="padding-top: 7px;">৳ {{ number_format($final_due, 2) }}</td>
-                </tr>
-            </table>
-        </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="invoice-footer">
-            <div class="row">
-                <div class="col-6">
-                    <small class="text-muted">Issued by: {{ $invoice->user->name }}</small>
-                </div>
-                <div class="col-6 text-end">
-                    <div class="signature-line d-inline-block text-center">
-                        Authorized Signature
-                    </div>
-                </div>
+                    <tr class="net-row">
+                        <td>Net Payable</td>
+                        <td>Tk. {{ number_format($totalPayable, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Received Amount</td>
+                        <td>- Tk. {{ number_format($paidAmount, 2) }}</td>
+                    </tr>
+                    <tr class="due-row">
+                        <td>Final Due</td>
+                        <td>Tk. {{ number_format($finalDue, 2) }}</td>
+                    </tr>
+                </table>
             </div>
-            <div class="footer-note">
-                <p class="mb-1">Thank you for your business!</p>
-                <p class="mb-0">This is a computer-generated invoice. No signature is required for amounts below
-                    ৳10,000.</p>
+
+            @if($paymentAllocations->isNotEmpty())
+                <div class="timeline-section">
+                    <div class="invoice-box-title" style="border: 1px solid #111; border-bottom: 0;">Invoice Timeline / Payment History</div>
+                    <table class="timeline-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 34mm;">Date</th>
+                                <th style="width: 36mm;">Type</th>
+                                <th>Reference / Note</th>
+                                <th style="width: 30mm;" class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ \Carbon\Carbon::parse($invoice->date)->format('d M, Y') }}</td>
+                                <td>Invoice Created</td>
+                                <td>{{ $invoice->invoice_no }}</td>
+                                <td class="text-right">Tk. {{ number_format($currentInvoice, 2) }}</td>
+                            </tr>
+                            @foreach($paymentAllocations as $allocation)
+                                <tr>
+                                    <td>{{ \Carbon\Carbon::parse($allocation->payment->date)->format('d M, Y') }}</td>
+                                    <td>
+                                        {{ $allocation->payment->payment_type === 'invoice' ? 'Payment / Due Collection' : 'Payment' }}
+                                    </td>
+                                    <td>
+                                        {{ $allocation->payment->note ?: ucfirst($allocation->payment->payment_method) . ' collection' }}
+                                        @if($allocation->payment->user)
+                                            <span> - {{ $allocation->payment->user->name }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-right">Tk. {{ number_format($allocation->amount, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+            <div class="closing-note">
+                Closing Balance / Final Due: <strong>Tk. {{ number_format($finalDue, 2) }}</strong>
+            </div>
+        </div>
+
+        <div class="invoice-footer">
+            <div class="signature-grid">
+                <div class="signature-block">
+                    <div class="signature-line">Customer Signature with Seal</div>
+                    <div class="signature-hint">Received goods in good condition</div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-line">Authorized Signature</div>
+                    <div class="signature-hint">For TH Trade Corporation</div>
+                </div>
             </div>
         </div>
     </div>

@@ -10,6 +10,7 @@ class Product extends Model
         'product_name',
         'product_id',
         'model_no',
+        'pack_size',
         'cost_price',
         'selling_price',
         'stock_quantity',

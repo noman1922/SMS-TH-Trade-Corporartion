@@ -22,6 +22,7 @@ class ReportsController extends Controller
     {
         $fromDate = $request->input('from_date', Carbon::today()->toDateString());
         $toDate = $request->input('to_date', Carbon::today()->toDateString());
+        $reportYear = Carbon::parse($fromDate)->year;
 
         // PERFORMANCE OPTIMIZATION
         // QUERY OPTIMIZATION
@@ -42,14 +43,27 @@ class ReportsController extends Controller
             'total_due' => round((float) $summaryRow->total_due, 2),
         ];
 
+        // CUSTOMER_ID MIGRATION FIX
+        // SAFE CUSTOMER QUERY
         $invoices = Invoice::whereBetween('date', [$fromDate, $toDate])
-            ->with('customer:id,customer_name')
+            ->with(['customer' => function ($query) {
+                $query->select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name']));
+            }])
             ->select('id', 'invoice_no', 'customer_id', 'net_payable', 'received_amount', 'due_amount', 'date')
             ->orderBy('date', 'desc')
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.reports.sales', compact('invoices', 'summary', 'fromDate', 'toDate'));
+        // PAYMENT FLOW IMPROVEMENT
+        // REPORT TIMELINE
+        $monthlySales = Invoice::whereYear('date', $reportYear)
+            ->selectRaw('EXTRACT(MONTH FROM date) as month, COUNT(*) as total_invoices, COALESCE(SUM(net_payable), 0) as total_sales, COALESCE(SUM(received_amount), 0) as total_received, COALESCE(SUM(due_amount), 0) as total_due')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->keyBy(fn ($row) => (int) $row->month);
+
+        return view('admin.reports.sales', compact('invoices', 'summary', 'fromDate', 'toDate', 'monthlySales', 'reportYear'));
     }
 
     /**
@@ -79,6 +93,8 @@ class ReportsController extends Controller
             ->whereBetween('invoices.date', [$startOfReportYear, $endOfReportYear])
             ->select(
                 DB::raw('EXTRACT(MONTH FROM invoices.date) as month'),
+                DB::raw('COALESCE(SUM(invoice_items.quantity * invoice_items.unit_price), 0) as sales'),
+                DB::raw('COALESCE(SUM(invoice_items.quantity * invoice_items.cost_price), 0) as cost'),
                 DB::raw('COALESCE(SUM(invoice_items.quantity * (invoice_items.unit_price - invoice_items.cost_price)), 0) as profit')
             )
             ->groupBy('month')
@@ -110,11 +126,16 @@ class ReportsController extends Controller
     /**
      * Due Report
      */
-    public function dueReport()
+    public function dueReport(Request $request)
     {
+        // REPORT TIMELINE
+        $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->toDateString());
+        $toDate = $request->input('to_date', Carbon::now()->toDateString());
         // PERFORMANCE OPTIMIZATION
         // QUERY OPTIMIZATION
-        $customers = Customer::select('id', 'customer_name', 'hospital_name', 'mobile', 'previous_due')
+        // CUSTOMER_ID MIGRATION FIX
+        // SAFE CUSTOMER QUERY
+        $customers = Customer::select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name', 'mobile', 'previous_due']))
             ->withSum('invoices', 'net_payable')
             ->withSum('payments', 'amount')
             ->get()
@@ -125,7 +146,28 @@ class ReportsController extends Controller
         // FINANCIAL CALCULATION FIX
         $totalOutstanding = round((float) $customers->sum('current_due'), 2);
 
-        return view('admin.reports.due', compact('customers', 'totalOutstanding'));
+        // PAYMENT FLOW IMPROVEMENT
+        // DUE HISTORY SYSTEM
+        $collections = Payment::query()
+            ->with([
+                'customer' => function ($query) {
+                    $query->select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name']));
+                },
+                'invoice:id,invoice_no',
+                'allocations.invoice:id,invoice_no',
+                'user:id,name',
+            ])
+            ->whereBetween('date', [$fromDate, $toDate])
+            ->latest('date')
+            ->latest('id')
+            ->get();
+
+        $collectionSummary = [
+            'count' => $collections->count(),
+            'amount' => round((float) $collections->sum('amount'), 2),
+        ];
+
+        return view('admin.reports.due', compact('customers', 'totalOutstanding', 'collections', 'collectionSummary', 'fromDate', 'toDate'));
     }
 
     /**
@@ -134,37 +176,131 @@ class ReportsController extends Controller
     public function customerLedger(Request $request)
     {
         // QUERY OPTIMIZATION
-        $customers = Customer::select('id', 'customer_name')->orderBy('customer_name', 'asc')->get();
+        // CUSTOMER LEDGER SYSTEM
+        // CUSTOMER_ID MIGRATION FIX
+        // SAFE CUSTOMER QUERY
+        $customers = Customer::select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name', 'mobile']))
+            ->orderBy(Customer::displayOrderColumn(), 'asc')
+            ->get();
         $customerId = $request->input('customer_id');
+        // REPORT TIMELINE
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
         
         $ledger = collect();
         $customer = null;
+        $openingBalance = 0;
+        $closingBalance = 0;
 
         if ($customerId) {
-            $customer = Customer::select('id', 'customer_name', 'mobile', 'address', 'previous_due')->findOrFail($customerId);
+            $customer = Customer::select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name', 'mobile', 'address', 'previous_due']))
+                ->withSum('invoices', 'net_payable')
+                ->withSum('payments', 'amount')
+                ->findOrFail($customerId);
             
-            // Get Invoices (Debits)
-            $invoices = $customer->invoices()
-                ->select('date', 'invoice_no as reference', 'net_payable as debit', DB::raw('0 as credit'), DB::raw("'Invoice' as type"))
-                ->get();
-            
-            // Get Payments (Credits)
-            $payments = $customer->payments()
-                ->select('date', DB::raw("CONCAT('Payment #', id) as reference"), DB::raw('0 as debit'), 'amount as credit', DB::raw("'Payment' as type"))
-                ->get();
+            $openingBalance = round((float) $customer->previous_due, 2);
 
-            // Merge and Sort
-            $ledger = $invoices->concat($payments)->sortBy('date');
+            if ($fromDate) {
+                // LEDGER IMPROVEMENT
+                $salesBefore = round((float) $customer->invoices()
+                    ->whereDate('date', '<', $fromDate)
+                    ->sum('net_payable'), 2);
+                $paymentsBefore = round((float) $customer->payments()
+                    ->whereDate('date', '<', $fromDate)
+                    ->sum('amount'), 2);
+                $openingBalance = round($openingBalance + $salesBefore - $paymentsBefore, 2);
+            }
+
+            $runningBalance = $openingBalance;
+
+            // CUSTOMER LEDGER SYSTEM
+            $invoices = $customer->invoices()
+                // LEDGER IMPROVEMENT
+                ->select('id', 'invoice_no', 'net_payable', 'received_amount', 'due_amount', 'date', 'created_at')
+                ->when($fromDate, fn ($query) => $query->whereDate('date', '>=', $fromDate))
+                ->when($toDate, fn ($query) => $query->whereDate('date', '<=', $toDate))
+                ->get()
+                ->map(function ($invoice) {
+                    return [
+                        'sort_at' => Carbon::parse($invoice->date)->startOfDay()->addSeconds($invoice->id),
+                        'invoice_no' => $invoice->invoice_no,
+                        'invoice_date' => $invoice->date,
+                        'sales_amount' => round((float) $invoice->net_payable, 2),
+                        'paid_amount' => round((float) $invoice->received_amount, 2),
+                        'due_amount' => round((float) $invoice->due_amount, 2),
+                        'payment_collection' => 0,
+                        'type' => 'Invoice',
+                        'reference' => $invoice->invoice_no,
+                    ];
+                });
+            
+            $payments = $customer->payments()
+                // PAYMENT FLOW IMPROVEMENT
+                // LEDGER IMPROVEMENT
+                // DUE COLLECTION IMPROVEMENT
+                // DUE HISTORY SYSTEM
+                ->with(['invoice:id,invoice_no', 'allocations.invoice:id,invoice_no'])
+                ->select('id', 'invoice_id', 'amount', 'previous_due', 'remaining_due', 'payment_type', 'payment_method', 'date', 'note', 'created_at')
+                ->when($fromDate, fn ($query) => $query->whereDate('date', '>=', $fromDate))
+                ->when($toDate, fn ($query) => $query->whereDate('date', '<=', $toDate))
+                ->get()
+                ->map(function ($payment) {
+                    $allocatedInvoices = $payment->allocations->pluck('invoice.invoice_no')->filter()->values();
+                    $invoiceNo = optional($payment->invoice)->invoice_no
+                        ?: ($allocatedInvoices->isNotEmpty() ? $allocatedInvoices->join(', ') : null);
+
+                    return [
+                        'sort_at' => Carbon::parse($payment->date)->endOfDay()->addSeconds($payment->id),
+                        'invoice_no' => $invoiceNo,
+                        'invoice_date' => $payment->date,
+                        'sales_amount' => 0,
+                        'paid_amount' => 0,
+                        'due_amount' => 0,
+                        'payment_collection' => round((float) $payment->amount, 2),
+                        'type' => 'Due Collection',
+                        'reference' => 'Payment #' . $payment->id . ' - ' . ucfirst($payment->payment_method) . ($payment->note ? ' - ' . $payment->note : ''),
+                    ];
+                });
+
+            $ledger = $invoices
+                ->concat($payments)
+                ->sortBy('sort_at')
+                ->values()
+                ->map(function ($entry) use (&$runningBalance) {
+                    $runningBalance = round($runningBalance + $entry['sales_amount'] - $entry['payment_collection'], 2);
+                    $entry['balance'] = $runningBalance;
+
+                    return (object) $entry;
+                });
+
+            $closingBalance = $runningBalance;
         }
 
-        return view('admin.reports.ledger', compact('customers', 'customer', 'ledger'));
+        return view('admin.reports.ledger', compact('customers', 'customer', 'ledger', 'openingBalance', 'closingBalance', 'fromDate', 'toDate'));
     }
 
     public function customerDueReceipt(Customer $customer)
     {
         // PAYMENT RECEIPT SYSTEM
+        // CUSTOMER MODULE IMPROVEMENT
+        // CUSTOMER LEDGER SYSTEM
         $customer->loadSum('invoices', 'net_payable')
-            ->loadSum('payments', 'amount');
+            ->loadSum('payments', 'amount')
+            ->load([
+                'invoices' => function ($query) {
+                    $query->select('id', 'customer_id', 'invoice_no', 'net_payable', 'received_amount', 'due_amount', 'date', 'created_at')
+                        ->orderBy('date')
+                        ->orderBy('created_at');
+                },
+                'payments' => function ($query) {
+                    // DUE COLLECTION IMPROVEMENT
+                    // DUE HISTORY SYSTEM
+                    $query->with(['invoice:id,invoice_no', 'allocations.invoice:id,invoice_no'])
+                        ->select('id', 'customer_id', 'invoice_id', 'amount', 'previous_due', 'remaining_due', 'payment_type', 'payment_method', 'date', 'note', 'created_at')
+                        ->orderBy('date')
+                        ->orderBy('created_at');
+                },
+            ]);
 
         return view('admin.reports.customer-due-receipt', compact('customer'));
     }
