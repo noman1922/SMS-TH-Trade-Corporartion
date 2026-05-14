@@ -3,12 +3,30 @@
 @section('title', 'Sales Report')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row mb-4">
+{{-- // STANDARD PRINT SYSTEM --}}
+{{-- // REPORT PRINT FLOW --}}
+{{-- // ERP REPORT PRINT LAYOUT --}}
+<div class="container-fluid standard-print-page">
+    <div class="row mb-4 d-print-none">
         <div class="col-md-6">
             <h3 class="fw-bold">Sales Report</h3>
         </div>
-        {{-- // ROW PRINT FIX --}}
+        <div class="col-md-6 text-end d-print-none">
+            <a href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank" class="btn btn-secondary">
+                <i class="bi bi-printer me-1"></i> Print Report
+            </a>
+        </div>
+    </div>
+
+    <div class="standard-print-title-row d-none">
+        <div>
+            <h1 class="standard-print-title">Sales Report</h1>
+            <div>TH Trade Corporation</div>
+        </div>
+        <div class="standard-print-meta">
+            <strong>Period:</strong> {{ \Carbon\Carbon::parse($fromDate)->format('d M, Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('d M, Y') }}<br>
+            <strong>Printed:</strong> {{ now()->format('d M, Y h:i A') }}
+        </div>
     </div>
 
     <!-- Filters -->
@@ -155,11 +173,24 @@
                 </table>
             </div>
         </div>
-        @if($invoices->hasPages())
+        @if(method_exists($invoices, 'hasPages') && $invoices->hasPages())
             <div class="card-footer bg-white d-print-none">
                 {{ $invoices->links() }}
             </div>
         @endif
     </div>
+    <div class="standard-print-footer d-none">
+        <div class="standard-print-signatures">
+            <div class="standard-print-signature">Prepared By</div>
+            <div class="standard-print-signature">Authorized Signature</div>
+        </div>
+    </div>
 </div>
+@if($isPrint)
+    <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(function() { window.print(); }, 200);
+        });
+    </script>
+@endif
 @endsection

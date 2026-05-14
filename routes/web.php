@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Staff\StaffDashboardController;
+use App\Http\Controllers\LocalCacheController;
 
 // PERFORMANCE OPTIMIZATION
 // Route cache compatible redirect.
@@ -17,6 +18,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
+    // STAFF MANAGEMENT
+    Route::resource('staff-management', App\Http\Controllers\Admin\StaffController::class)->except(['show']);
     // STAFF PRODUCT REQUEST
     // PRODUCT APPROVAL FLOW
     Route::get('/approvals', [App\Http\Controllers\Admin\ApprovalController::class, 'index'])->name('admin.approvals.index');
@@ -67,6 +70,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->group(function () {
     // PAYMENT RECEIPT SYSTEM
     Route::get('/payments/{payment}/receipt', [App\Http\Controllers\Admin\PaymentController::class, 'receipt'])->name('payment.receipt');
 });
+
+// LOCAL CACHE SYSTEM
+// INDEXEDDB POS CACHE
+Route::middleware(['auth', 'staff'])->get('/local-cache/bootstrap', [LocalCacheController::class, 'bootstrap'])->name('local-cache.bootstrap');
 
 use App\Http\Controllers\PosController;
 

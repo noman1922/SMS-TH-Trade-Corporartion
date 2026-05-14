@@ -1,5 +1,113 @@
 @extends('layouts.admin')
 
+@section('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    /* // SEARCHABLE DROPDOWN FIX */
+    /* // POS UI ALIGNMENT FIX */
+    .pos-shell {
+        --pos-border: #d8dee7;
+        --pos-soft: #f8fafc;
+    }
+
+    .pos-panel {
+        border-radius: 6px;
+        border: 1px solid var(--pos-border);
+    }
+
+    .pos-panel .card-header {
+        background: #fff;
+        color: #111827;
+        border-bottom: 1px solid var(--pos-border);
+        padding: 0.75rem 1rem;
+    }
+
+    .pos-muted-box {
+        background: var(--pos-soft);
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+    }
+
+    .pos-entry-grid {
+        background: var(--pos-soft);
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 0.875rem;
+    }
+
+    .pos-entry-grid .form-label {
+        margin-bottom: 0.35rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .ts-wrapper .ts-control {
+        min-height: 38px;
+        border-radius: 0.5rem;
+        border-color: #cbd5e1;
+        font-size: 0.875rem;
+    }
+
+    .ts-wrapper.focus .ts-control {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .ts-dropdown {
+        border-color: #cbd5e1;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+        font-size: 0.875rem;
+    }
+
+    .ts-dropdown .option {
+        padding: 0.55rem 0.75rem;
+    }
+
+    .ts-dropdown .active {
+        background: #eef5ff;
+        color: #111827;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 9px;
+    }
+
+    .summary-row strong {
+        white-space: nowrap;
+    }
+
+    .summary-total {
+        font-size: 1.08rem;
+        padding-top: 10px;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .price-source {
+        min-width: 86px;
+        display: inline-block;
+    }
+
+    #invoice_table thead {
+        border-top: 1px solid #d8dee7;
+    }
+
+    #invoice_table thead th {
+        background: #f1f5f9;
+        color: #334155;
+        border-color: #d8dee7;
+    }
+
+    #invoice_table .item-price-input {
+        max-width: 150px;
+        margin-left: auto;
+    }
+</style>
+@endsection
+
 @section('content')
 @php
     // POS SEARCH IMPROVEMENT
@@ -12,45 +120,18 @@
     ])->values();
 @endphp
 
-<style>
-    .pos-panel { border-radius: 6px; }
-    .pos-muted-box { background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 6px; }
-    .product-search-wrap { position: relative; }
-    .product-results {
-        position: absolute;
-        z-index: 1050;
-        top: 100%;
-        left: 0;
-        right: 0;
-        max-height: 280px;
-        overflow-y: auto;
-        background: #fff;
-        border: 1px solid #ced4da;
-        border-top: 0;
-        border-radius: 0 0 6px 6px;
-        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
-    }
-    .product-result { cursor: pointer; padding: 9px 12px; border-bottom: 1px solid #f1f3f5; }
-    .product-result:hover, .product-result.active { background: #eef5ff; }
-    .summary-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
-    .summary-row strong { white-space: nowrap; }
-    .summary-total { font-size: 1.08rem; padding-top: 10px; border-top: 1px solid #dee2e6; }
-    .price-source { min-width: 86px; display: inline-block; }
-</style>
-
-<div class="row g-4">
+<div class="row g-3 pos-shell">
     <div class="col-lg-8">
         <div class="card shadow-sm pos-panel mb-4">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Invoice Generation</h5>
-                <span class="badge bg-light text-dark"># {{ $invoice_no }}</span>
+                <span class="badge bg-light text-dark border"># {{ $invoice_no }}</span>
             </div>
             <div class="card-body">
-                <div class="row g-3 mb-4">
+                <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-bold">Select Customer</label>
-                        <select id="customer_select" class="form-select">
-                            <option value="">-- Choose Customer --</option>
+                        <label class="form-label fw-bold">Customer</label>
+                        <select id="customer_select" class="form-select" placeholder="Search customer ID, name, hospital, or mobile">
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" data-mobile="{{ $customer->mobile }}" data-address="{{ $customer->address }}" data-due="{{ $customer->current_due }}">
                                     {{ $customer->customer_id }} - {{ $customer->hospital_name }} @if($customer->customer_name) ({{ $customer->customer_name }}) @endif
@@ -66,14 +147,10 @@
                     </div>
                 </div>
 
-                <div class="row g-3 mb-3 pos-muted-box p-3">
+                <div class="row g-3 mb-3 pos-entry-grid align-items-end">
                     <div class="col-md-6">
-                        <label class="form-label fw-bold">Search Product</label>
-                        <div class="product-search-wrap">
-                            <input type="text" id="product_search" class="form-control" autocomplete="off" placeholder="Type product name, model, or code">
-                            <input type="hidden" id="product_select">
-                            <div id="product_results" class="product-results d-none"></div>
-                        </div>
+                        <label class="form-label fw-bold">Product</label>
+                        <select id="product_select" class="form-select" placeholder="Search product name, model, or code"></select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold">Quantity</label>
@@ -89,8 +166,8 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle mt-3" id="invoice_table">
-                        <thead class="table-dark">
+                    <table class="table table-bordered table-hover align-middle mt-3 mb-0" id="invoice_table">
+                        <thead>
                             <tr>
                                 <th style="width: 54px;">SL</th>
                                 <th>Product</th>
@@ -113,7 +190,7 @@
 
     <div class="col-lg-4">
         <div class="card shadow-sm sticky-top pos-panel" style="top: 20px;">
-            <div class="card-header bg-dark text-white">
+            <div class="card-header">
                 <h5 class="mb-0">Billing Summary</h5>
             </div>
             <div class="card-body bg-light">
@@ -184,13 +261,20 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
     $(document).ready(function() {
         const isAdmin = @json($userRole === 'admin');
         const productCatalog = @json($productCatalog);
         const csrfToken = '{{ csrf_token() }}';
+        let cachedProducts = productCatalog;
+        let cachedCustomers = [];
         let items = [];
         let selectedProduct = null;
+        let selectedCustomer = null;
+        let customerSelect = null;
+        let productSelect = null;
+        let priceEditTimer = null;
 
         function money(amount) {
             return `Tk. ${Number(amount || 0).toFixed(2)}`;
@@ -202,14 +286,220 @@
             });
         }
 
+        function customerLabel(customer) {
+            const hospital = customer.hospital_name || customer.customer_name || 'Customer';
+            const contact = customer.customer_name && customer.hospital_name ? ` (${customer.customer_name})` : '';
+            return `${customer.customer_id || customer.id} - ${hospital}${contact}`;
+        }
+
+        function customerOption(customer) {
+            return `<option value="${customer.id}" data-mobile="${escapeHtml(customer.mobile || '')}" data-address="${escapeHtml(customer.address || '')}" data-due="${Number(customer.current_due || 0)}">${escapeHtml(customerLabel(customer))}</option>`;
+        }
+
+        function customerOptionData(customer) {
+            return {
+                value: String(customer.id),
+                text: customerLabel(customer),
+                customer_id: customer.customer_id || '',
+                customer_name: customer.customer_name || '',
+                hospital_name: customer.hospital_name || '',
+                mobile: customer.mobile || '',
+                address: customer.address || '',
+                current_due: Number(customer.current_due || 0)
+            };
+        }
+
+        function productOptionData(product) {
+            return {
+                value: String(product.id),
+                text: product.product_name,
+                product_id: product.product_id || '',
+                product_name: product.product_name || '',
+                model_no: product.model_no || '',
+                stock_quantity: Number(product.stock_quantity || 0),
+                selling_price: Number(product.selling_price || 0)
+            };
+        }
+
+        // PRODUCT SEARCH DROPDOWN FIX
+        function buildSearchableDropdowns() {
+            // SEARCHABLE DROPDOWN FIX
+            customerSelect = new TomSelect('#customer_select', {
+                valueField: 'value',
+                labelField: 'text',
+                searchField: ['customer_id', 'customer_name', 'hospital_name', 'mobile', 'text'],
+                maxOptions: 50,
+                preload: true,
+                create: false,
+                openOnFocus: true,
+                placeholder: 'Search customer ID, name, hospital, or mobile',
+                render: {
+                    option: function(data, escape) {
+                        return `<div>
+                            <div class="fw-semibold">${escape(data.text)}</div>
+                            <div class="small text-muted">${escape(data.mobile || 'No mobile')} | Due: ${money(data.current_due)}</div>
+                        </div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div>${escape(data.text)}</div>`;
+                    }
+                },
+                onChange: function(value) {
+                    applyCustomerSelection(value);
+                }
+            });
+
+            // PRODUCT SEARCH DROPDOWN FIX
+            // Product selector behaves exactly like customer selector:
+            // - click empty area → shows full product list
+            // - typing filters instantly, case-insensitive
+            // - searches by product name, model, product code
+            productSelect = new TomSelect('#product_select', {
+                valueField: 'value',
+                labelField: 'text',
+                searchField: ['product_name', 'model_no', 'product_id', 'text'],
+                maxOptions: 50,
+                preload: true,
+                create: false,
+                openOnFocus: true,
+                placeholder: 'Search product name, model, or code',
+                render: {
+                    option: function(data, escape) {
+                        return `<div>
+                            <div class="fw-semibold">${escape(data.product_name || data.text)}</div>
+                            <div class="small text-muted">[${escape(data.product_id)}] ${data.model_no ? 'Model: ' + escape(data.model_no) + ' | ' : ''}Stock: ${data.stock_quantity} | Default: ${money(data.selling_price)}</div>
+                        </div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div>[${escape(data.product_id)}] ${escape(data.product_name || data.text)}</div>`;
+                    }
+                },
+                onChange: function(value) {
+                    applyProductSelection(value);
+                }
+            });
+
+            // PRODUCT SEARCH DROPDOWN FIX
+            // Pre-populate product dropdown from cachedProducts (same as customer selector)
+            refreshProductOptions();
+        }
+
+        async function searchProductsForDropdown(query) {
+            // PRODUCT SEARCH DROPDOWN FIX
+            // Fallback search used by applyProductSelection when product not in cachedProducts
+            const localMatches = window.THTradeCache
+                ? await window.THTradeCache.searchProducts(query, 50)
+                : [];
+            const matches = localMatches.length
+                ? localMatches
+                : cachedProducts
+                    .map(product => ({ product, score: scoreProduct(product, query) }))
+                    .filter(row => row.score > 0)
+                    .sort((a, b) => b.score - a.score || a.product.product_name.localeCompare(b.product.product_name))
+                    .slice(0, 50)
+                    .map(row => row.product);
+
+            return matches.map(productOptionData);
+        }
+
+        function refreshCustomerOptions() {
+            if (!customerSelect) return;
+            customerSelect.clearOptions();
+            customerSelect.addOptions(cachedCustomers.map(customerOptionData));
+            customerSelect.refreshOptions(false);
+        }
+
+        // PRODUCT SEARCH DROPDOWN FIX
+        // Mirror of refreshCustomerOptions — populates product dropdown from cache
+        function refreshProductOptions() {
+            if (!productSelect) return;
+            const currentValue = productSelect.getValue();
+            productSelect.clearOptions();
+            productSelect.addOptions(cachedProducts.map(productOptionData));
+            if (currentValue) {
+                productSelect.setValue(currentValue, true);
+            }
+            productSelect.refreshOptions(false);
+        }
+
+        function resetProductSelector() {
+            if (!productSelect) return;
+            productSelect.clear();
+            productSelect.clearOptions();
+            // Re-populate from cache so the list is immediately available again
+            productSelect.addOptions(cachedProducts.map(productOptionData));
+        }
+
+        async function applyProductSelection(productId) {
+            // SEARCHABLE DROPDOWN FIX
+            selectedProduct = null;
+            $('#selected_stock').val('-');
+            if (!productId) {
+                return;
+            }
+
+            selectedProduct = cachedProducts.find(product => Number(product.id) === Number(productId))
+                || (window.THTradeCache ? await window.THTradeCache.getProduct(productId) : null);
+
+            if (selectedProduct) {
+                $('#selected_stock').val(selectedProduct.stock_quantity);
+            }
+        }
+
+        function applyCustomerSelection(customerId) {
+            // SEARCHABLE DROPDOWN FIX
+            selectedCustomer = cachedCustomers.find(customer => Number(customer.id) === Number(customerId)) || null;
+            const data = customerSelect ? customerSelect.options[String(customerId)] : null;
+
+            if (customerId && data) {
+                $('#customer_details').html(`
+                    <strong>Mobile:</strong> ${escapeHtml(data.mobile || 'N/A')}<br>
+                    <strong>Address:</strong> ${escapeHtml(data.address || 'N/A')}
+                `);
+                $('#summary_prev_due').text(money(Number(data.current_due || 0)));
+                refreshItemPricesForCustomer(customerId);
+            } else {
+                $('#customer_details').text('Select a customer to see details...');
+                $('#summary_prev_due').text(money(0));
+                renderTable();
+            }
+        }
+
+        async function warmLocalCache() {
+            // LOCAL CACHE SYSTEM
+            // INDEXEDDB POS CACHE
+            // PRODUCT SEARCH DROPDOWN FIX
+            if (!window.THTradeCache) {
+                return;
+            }
+
+            await window.THTradeCache.sync(false);
+            const [products, customers] = await Promise.all([
+                window.THTradeCache.allProducts(),
+                window.THTradeCache.allCustomers()
+            ]);
+
+            if (products.length) {
+                cachedProducts = products;
+                // PRODUCT SEARCH DROPDOWN FIX — refresh product dropdown just like customer dropdown
+                refreshProductOptions();
+            }
+
+            if (customers.length) {
+                cachedCustomers = customers;
+                refreshCustomerOptions();
+            }
+        }
+
         // POS SEARCH IMPROVEMENT
         function scoreProduct(product, query) {
+            // LOCAL FIRST SEARCH
             const normalized = query.toLowerCase().trim();
             if (!normalized) {
                 return 0;
             }
 
-            const haystack = `${product.product_name} ${product.product_id}`.toLowerCase();
+            const haystack = `${product.product_name} ${product.product_id} ${product.model_no || ''}`.toLowerCase();
             const words = product.product_name.toLowerCase().split(/\s+/).filter(Boolean);
             const terms = normalized.split(/\s+/).filter(Boolean);
             let score = 0;
@@ -236,73 +526,6 @@
 
             return score;
         }
-
-        function renderProductResults(query) {
-            const ranked = productCatalog
-                .map(product => ({ product, score: scoreProduct(product, query) }))
-                .filter(row => row.score > 0)
-                .sort((a, b) => b.score - a.score || a.product.product_name.localeCompare(b.product.product_name))
-                .slice(0, 8);
-
-            if (!ranked.length) {
-                $('#product_results').html('<div class="product-result text-muted">No matching product found</div>').removeClass('d-none');
-                return;
-            }
-
-            const html = ranked.map(function(row) {
-                const product = row.product;
-                return `
-                    <div class="product-result" data-id="${product.id}">
-                        <div class="fw-bold">${escapeHtml(product.product_name)}</div>
-                        <div class="small text-muted">[${escapeHtml(product.product_id)}] Stock: ${product.stock_quantity} | Default: ${money(product.selling_price)}</div>
-                    </div>
-                `;
-            }).join('');
-
-            $('#product_results').html(html).removeClass('d-none');
-        }
-
-        $('#product_search').on('input focus', function() {
-            selectedProduct = null;
-            $('#product_select').val('');
-            $('#selected_stock').val('-');
-            renderProductResults($(this).val());
-        });
-
-        $(document).on('click', '.product-result[data-id]', function() {
-            const productId = Number($(this).data('id'));
-            selectedProduct = productCatalog.find(product => product.id === productId);
-            if (!selectedProduct) {
-                return;
-            }
-
-            $('#product_search').val(`[${selectedProduct.product_id}] ${selectedProduct.product_name}`);
-            $('#product_select').val(selectedProduct.id);
-            $('#selected_stock').val(selectedProduct.stock_quantity);
-            $('#product_results').addClass('d-none');
-        });
-
-        $(document).on('click', function(event) {
-            if (!$(event.target).closest('.product-search-wrap').length) {
-                $('#product_results').addClass('d-none');
-            }
-        });
-
-        $('#customer_select').change(function() {
-            let option = $(this).find('option:selected');
-            if (option.val()) {
-                $('#customer_details').html(`
-                    <strong>Mobile:</strong> ${escapeHtml(option.data('mobile') || 'N/A')}<br>
-                    <strong>Address:</strong> ${escapeHtml(option.data('address') || 'N/A')}
-                `);
-                $('#summary_prev_due').text(money(parseFloat(option.data('due')) || 0));
-                refreshItemPricesForCustomer(option.val());
-            } else {
-                $('#customer_details').text('Select a customer to see details...');
-                $('#summary_prev_due').text(money(0));
-                renderTable();
-            }
-        });
 
         // CUSTOMER PRICE MEMORY
         // DYNAMIC CUSTOMER PRICING
@@ -342,10 +565,10 @@
             });
         }
 
-        $('#add_item_btn').click(function() {
+        $('#add_item_btn').click(async function() {
             const addButton = this;
-            const customerId = $('#customer_select').val();
-            let productId = $('#product_select').val();
+            const customerId = customerSelect ? customerSelect.getValue() : $('#customer_select').val();
+            let productId = productSelect ? productSelect.getValue() : $('#product_select').val();
             let qty = parseInt($('#product_qty').val(), 10);
 
             if (!customerId) {
@@ -359,6 +582,9 @@
             }
 
             window.THTradeUX.setButtonLoading(addButton, 'Adding...');
+            const cachedProduct = selectedProduct
+                || cachedProducts.find(product => Number(product.id) === Number(productId))
+                || (window.THTradeCache ? await window.THTradeCache.getProduct(productId) : null);
 
             let existing = items.find(i => i.product_id == productId);
             if (existing) {
@@ -369,6 +595,35 @@
                 }
                 existing.quantity += qty;
                 renderTable();
+                window.THTradeUX.resetButton(addButton);
+                return;
+            }
+
+            if (cachedProduct) {
+                // LOCAL FIRST SEARCH
+                // INDEXEDDB POS CACHE
+                if (Number(cachedProduct.stock_quantity) < qty) {
+                    Swal.fire('Low Stock', `Only ${cachedProduct.stock_quantity} items available`, 'warning');
+                    window.THTradeUX.resetButton(addButton);
+                    return;
+                }
+
+                const resolved = window.THTradeCache
+                    ? await window.THTradeCache.resolvePrice(customerId, cachedProduct.id, cachedProduct.selling_price)
+                    : { price: cachedProduct.selling_price, source: 'default' };
+
+                items.push({
+                    product_id: cachedProduct.id,
+                    name: cachedProduct.product_name,
+                    quantity: qty,
+                    stock_quantity: Number(cachedProduct.stock_quantity),
+                    price: Number(resolved.price),
+                    price_source: resolved.source || 'default'
+                });
+                renderTable();
+                resetProductSelector();
+                selectedProduct = null;
+                $('#selected_stock').val('-');
                 window.THTradeUX.resetButton(addButton);
                 return;
             }
@@ -388,6 +643,9 @@
                     price_source: product.price_source || 'default'
                 });
                 renderTable();
+                resetProductSelector();
+                selectedProduct = null;
+                $('#selected_stock').val('-');
             }).fail(function() {
                 Swal.fire('Error', 'Could not load product details. Please try again.', 'error');
             }).always(function() {
@@ -401,16 +659,49 @@
             renderTable();
         });
 
-        $(document).on('input', '.item-price-input', function() {
-            const index = Number($(this).data('index'));
-            const value = Math.max(0, parseFloat($(this).val() || 0) || 0);
+        function subtotal() {
+            return items.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
+        }
+
+        function commitPriceInput(input, formatValue = true) {
+            // UNIT PRICE EDIT FIX
+            const index = Number($(input).data('index'));
+            const value = Math.max(0, parseFloat($(input).val() || 0) || 0);
             if (!items[index] || !isAdmin) {
                 return;
             }
 
             items[index].price = value;
             items[index].price_source = 'manual';
-            renderTable();
+            if (formatValue) {
+                $(input).val(value.toFixed(2));
+            }
+            $(`.item-total[data-index="${index}"]`).text(money(value * Number(items[index].quantity)));
+            $(`.item-price-source[data-index="${index}"]`).html(priceSourceLabel('manual'));
+            updateSummary(subtotal());
+        }
+
+        $(document).on('input', '.item-price-input', function() {
+            // UNIT PRICE EDIT FIX
+            const input = this;
+            window.clearTimeout(priceEditTimer);
+            priceEditTimer = window.setTimeout(function() {
+                commitPriceInput(input, false);
+            }, 350);
+        });
+
+        $(document).on('blur', '.item-price-input', function() {
+            // UNIT PRICE EDIT FIX
+            window.clearTimeout(priceEditTimer);
+            commitPriceInput(this);
+        });
+
+        $(document).on('keydown', '.item-price-input', function(event) {
+            // UNIT PRICE EDIT FIX
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.blur();
+            }
         });
 
         function priceSourceLabel(source) {
@@ -448,11 +739,11 @@
                         <td>${index + 1}</td>
                         <td>
                             <div class="fw-bold">${escapeHtml(item.name)}</div>
-                            <div class="small text-muted">${priceSourceLabel(item.price_source)}</div>
+                            <div class="small text-muted item-price-source" data-index="${index}">${priceSourceLabel(item.price_source)}</div>
                         </td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${priceField}</td>
-                        <td class="text-end fw-bold">${money(total)}</td>
+                        <td class="text-end fw-bold item-total" data-index="${index}">${money(total)}</td>
                         <td class="text-center">
                             <button class="btn btn-danger btn-sm remove-item" data-index="${index}" type="button">&times;</button>
                         </td>
@@ -505,19 +796,17 @@
         $('#discount_type').on('change', function() {
             const isPercentage = $(this).val() === 'percentage';
             $('#discount_value').attr('max', isPercentage ? '100' : null).val('0');
-            updateSummary(items.reduce((sum, item) => sum + (item.price * item.quantity), 0));
+            updateSummary(subtotal());
         });
 
         $('#discount_value, #vat_percent, #ait_percent, #extra_charge, #received_amount').on('input', function() {
-            let subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            updateSummary(subtotal);
+            updateSummary(subtotal());
         });
 
         $('#clear_all_btn').click(function() {
             items = [];
             selectedProduct = null;
-            $('#product_search').val('');
-            $('#product_select').val('');
+            resetProductSelector();
             $('#selected_stock').val('-');
             renderTable();
         });
@@ -533,7 +822,7 @@
                 return;
             }
 
-            let customerId = $('#customer_select').val();
+            let customerId = customerSelect ? customerSelect.getValue() : $('#customer_select').val();
             if (!customerId) {
                 Swal.fire('Error', 'Please select a customer', 'error');
                 return;
@@ -569,6 +858,9 @@
                 contentType: 'application/json',
                 success: function(response) {
                     window.THTradeUX.toast('Invoice Saved Successfully', 'success');
+                    if (window.THTradeCache) {
+                        window.THTradeCache.sync(true);
+                    }
                     Swal.fire({
                         title: 'Success!',
                         text: response.message,
@@ -578,9 +870,11 @@
                         cancelButtonText: 'Done'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.open(`{{ url('/pos/print') }}/${response.invoice_id}`, '_blank');
+                            // SINGLE TAB PRINT FIX — navigate to print page in same tab, no duplicate tabs
+                            window.location.href = `{{ url('/pos/print') }}/${response.invoice_id}`;
+                        } else {
+                            location.reload();
                         }
-                        location.reload();
                     });
                 },
                 error: function(xhr) {
@@ -593,6 +887,9 @@
                 }
             });
         });
+
+        buildSearchableDropdowns();
+        warmLocalCache();
     });
 </script>
 @endsection

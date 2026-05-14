@@ -8,6 +8,7 @@
     <style>
         /* // DUE COLLECTION IMPROVEMENT */
         /* // DUE HISTORY SYSTEM */
+        /* // STANDARD PRINT SYSTEM */
         * { box-sizing: border-box; }
         body {
             margin: 0;
@@ -22,7 +23,7 @@
             width: 210mm;
             min-height: 297mm;
             margin: 0 auto 20px;
-            padding: 16mm 13mm;
+            padding: 42mm 12mm 12mm;
             background: #fff;
             box-shadow: 0 3px 18px rgba(0, 0, 0, 0.18);
         }
@@ -94,7 +95,9 @@
             @page { size: A4; margin: 0; }
             body { background: #fff; color: #111; }
             .print-actions { display: none !important; }
-            .receipt-page { width: 210mm; min-height: 297mm; margin: 0; padding: 14mm 12mm; box-shadow: none; }
+            .receipt-page { width: 210mm; min-height: 297mm; margin: 0; padding: 42mm 12mm 12mm; box-shadow: none; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
             tr, .info-box, .summary-box, .amount-strip, .signature-grid { break-inside: avoid; page-break-inside: avoid; }
         }
     </style>

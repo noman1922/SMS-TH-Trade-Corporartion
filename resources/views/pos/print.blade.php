@@ -10,6 +10,7 @@
         /* // INVOICE PRINT REDESIGN */
         /* // A4 PRINT LAYOUT */
         /* // ERP STYLE INVOICE */
+        /* // STANDARD PRINT SYSTEM */
         * {
             box-sizing: border-box;
         }

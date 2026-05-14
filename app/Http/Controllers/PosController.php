@@ -32,18 +32,14 @@ class PosController extends Controller
         // PERFORMANCE OPTIMIZATION
         // QUERY OPTIMIZATION
         // SUPABASE SPEED FIX
-        $products = Product::where('stock_quantity', '>', 0)
-            ->select('id', 'product_id', 'product_name', 'selling_price', 'stock_quantity')
-            ->orderBy('product_name')
-            ->get();
+        // LOCAL CACHE SYSTEM
+        // INDEXEDDB POS CACHE
+        $products = collect();
 
         // CUSTOMER_ID MIGRATION FIX
         // SAFE CUSTOMER QUERY
-        $customers = Customer::withSum('invoices', 'net_payable')
-            ->withSum('payments', 'amount')
-            ->select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name', 'mobile', 'address', 'previous_due']))
-            ->orderBy('customer_name', 'asc')
-            ->get();
+        // LOCAL FIRST SEARCH
+        $customers = collect();
         $invoice_no = 'INV-' . strtoupper(uniqid());
 
         // DYNAMIC CUSTOMER PRICING

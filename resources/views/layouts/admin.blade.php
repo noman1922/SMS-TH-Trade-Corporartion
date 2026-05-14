@@ -215,9 +215,118 @@
 
         /* ===== PRINT ===== */
         @media print {
+            /* // ERP REPORT PRINT LAYOUT */
             .sidebar, .navbar, .d-print-none, .sidebar-overlay { display: none !important; }
             .main-wrapper { margin-left: 0 !important; }
-            body { background: #fff; }
+            body {
+                background: #fff;
+                color: #111;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            .standard-print-page {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 42mm 12mm 12mm;
+                background: #fff;
+                box-shadow: none !important;
+            }
+            .standard-print-title-row {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                align-items: end;
+                gap: 12px;
+                border-bottom: 2px solid #111;
+                padding-bottom: 6px;
+                margin-bottom: 8px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .standard-print-title {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+            }
+            .standard-print-meta {
+                text-align: right;
+                font-size: 11px;
+            }
+            .standard-print-footer {
+                display: block !important;
+                margin-top: 18mm;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .standard-print-signatures {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 34mm;
+            }
+            .standard-print-signature {
+                border-top: 1px solid #111;
+                padding-top: 5px;
+                text-align: center;
+                font-size: 10px;
+                font-weight: 700;
+            }
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #111 !important;
+                break-inside: avoid;
+                border-radius: 0 !important;
+                margin-bottom: 8px !important;
+            }
+            .card-header {
+                border-bottom: 1px solid #111 !important;
+                background: #f4f4f4 !important;
+                color: #111 !important;
+                border-radius: 0 !important;
+                padding: 4px 6px !important;
+            }
+            .card-body {
+                padding: 6px !important;
+            }
+            .table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-bottom: 0 !important;
+            }
+            .table th,
+            .table td {
+                color: #111 !important;
+                border-color: #555 !important;
+                font-size: 10px;
+                padding: 4px 5px;
+            }
+            .table th {
+                background: #f4f4f4 !important;
+                text-transform: uppercase;
+                font-weight: 700;
+            }
+            .badge {
+                background: transparent !important;
+                border: 0 !important;
+                color: #111 !important;
+                padding: 0 !important;
+                font-weight: 700;
+            }
+            thead {
+                display: table-header-group;
+            }
+            tfoot {
+                display: table-footer-group;
+            }
+            tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
         }
     </style>
     @yield('styles')
@@ -279,6 +388,242 @@
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // LOCAL CACHE SYSTEM
+        // INDEXEDDB POS CACHE
+        window.THTradeCache = (function() {
+            const isAuthenticated = @json(auth()->check());
+            const cacheUrl = @json(auth()->check() ? route('local-cache.bootstrap') : null);
+            const dbName = 'th_trade_pos_cache_v1';
+            const syncInterval = 3 * 60 * 1000;
+            const stores = ['products', 'customers', 'pricing', 'recent_invoices', 'dashboard_summary', 'meta'];
+            let dbPromise = null;
+
+            function openDb() {
+                if (!isAuthenticated || !window.indexedDB) {
+                    return Promise.resolve(null);
+                }
+
+                if (dbPromise) {
+                    return dbPromise;
+                }
+
+                dbPromise = new Promise(function(resolve, reject) {
+                    const request = indexedDB.open(dbName, 1);
+
+                    request.onupgradeneeded = function(event) {
+                        const db = event.target.result;
+                        stores.forEach(function(store) {
+                            if (!db.objectStoreNames.contains(store)) {
+                                db.createObjectStore(store, { keyPath: store === 'meta' ? 'key' : 'id' });
+                            }
+                        });
+                    };
+
+                    request.onsuccess = function(event) {
+                        resolve(event.target.result);
+                    };
+                    request.onerror = function() {
+                        reject(request.error);
+                    };
+                });
+
+                return dbPromise;
+            }
+
+            async function getAll(storeName) {
+                const db = await openDb();
+                if (!db) return [];
+
+                return new Promise(function(resolve) {
+                    const tx = db.transaction(storeName, 'readonly');
+                    const request = tx.objectStore(storeName).getAll();
+                    request.onsuccess = function() {
+                        resolve(request.result || []);
+                    };
+                    request.onerror = function() {
+                        resolve([]);
+                    };
+                });
+            }
+
+            async function getMeta(key) {
+                const db = await openDb();
+                if (!db) return null;
+
+                return new Promise(function(resolve) {
+                    const tx = db.transaction('meta', 'readonly');
+                    const request = tx.objectStore('meta').get(key);
+                    request.onsuccess = function() {
+                        resolve(request.result || null);
+                    };
+                    request.onerror = function() {
+                        resolve(null);
+                    };
+                });
+            }
+
+            async function replaceStore(storeName, rows, keyMapper) {
+                const db = await openDb();
+                if (!db) return;
+
+                return new Promise(function(resolve, reject) {
+                    const tx = db.transaction(storeName, 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    store.clear();
+                    rows.forEach(function(row) {
+                        store.put(keyMapper ? keyMapper(row) : row);
+                    });
+                    tx.oncomplete = resolve;
+                    tx.onerror = function() {
+                        reject(tx.error);
+                    };
+                });
+            }
+
+            async function saveMeta(key, value) {
+                const db = await openDb();
+                if (!db) return;
+
+                return new Promise(function(resolve) {
+                    const tx = db.transaction('meta', 'readwrite');
+                    tx.objectStore('meta').put({ key, value, updated_at: Date.now() });
+                    tx.oncomplete = resolve;
+                    tx.onerror = resolve;
+                });
+            }
+
+            async function sync(force = false) {
+                if (!isAuthenticated || !cacheUrl || !window.indexedDB) {
+                    return false;
+                }
+
+                const lastSync = await getMeta('last_sync');
+                if (!force && lastSync && Date.now() - Number(lastSync.value || 0) < syncInterval) {
+                    return false;
+                }
+
+                try {
+                    const response = await fetch(cacheUrl, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        return false;
+                    }
+
+                    const payload = await response.json();
+                    await Promise.all([
+                        replaceStore('products', payload.products || []),
+                        replaceStore('customers', payload.customers || []),
+                        replaceStore('pricing', payload.pricing || [], row => ({ ...row, id: row.key })),
+                        replaceStore('recent_invoices', payload.recent_invoices || []),
+                        replaceStore('dashboard_summary', [{ id: 'current', ...(payload.dashboard_summary || {}) }])
+                    ]);
+                    await saveMeta('last_sync', Date.now());
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function normalize(value) {
+                return String(value || '').toLowerCase().trim();
+            }
+
+            function productScore(product, query) {
+                // LOCAL FIRST SEARCH
+                const normalized = normalize(query);
+                if (!normalized) return 0;
+
+                const haystack = normalize(`${product.product_name} ${product.product_id} ${product.model_no || ''}`);
+                const name = normalize(product.product_name);
+                const terms = normalized.split(/\s+/).filter(Boolean);
+                let score = 0;
+
+                if (name.startsWith(normalized) || normalize(product.product_id).startsWith(normalized)) score += 120;
+                if (haystack.includes(normalized)) score += 70;
+                terms.forEach(term => {
+                    if (haystack.includes(term)) score += 25;
+                });
+
+                return score;
+            }
+
+            function customerScore(customer, query) {
+                // LOCAL FIRST SEARCH
+                const normalized = normalize(query);
+                if (!normalized) return 0;
+
+                const haystack = normalize(`${customer.customer_id} ${customer.customer_name} ${customer.hospital_name} ${customer.mobile}`);
+                let score = 0;
+                if (normalize(customer.customer_id).startsWith(normalized) || normalize(customer.hospital_name).startsWith(normalized)) score += 120;
+                if (haystack.includes(normalized)) score += 70;
+                normalized.split(/\s+/).filter(Boolean).forEach(term => {
+                    if (haystack.includes(term)) score += 25;
+                });
+                return score;
+            }
+
+            async function searchProducts(query, limit = 8) {
+                const products = await getAll('products');
+                return products
+                    .map(product => ({ product, score: productScore(product, query) }))
+                    .filter(row => row.score > 0)
+                    .sort((a, b) => b.score - a.score || String(a.product.product_name).localeCompare(String(b.product.product_name)))
+                    .slice(0, limit)
+                    .map(row => row.product);
+            }
+
+            async function searchCustomers(query, limit = 25) {
+                const customers = await getAll('customers');
+                return customers
+                    .map(customer => ({ customer, score: customerScore(customer, query) }))
+                    .filter(row => row.score > 0)
+                    .sort((a, b) => b.score - a.score || String(a.customer.hospital_name || a.customer.customer_name).localeCompare(String(b.customer.hospital_name || b.customer.customer_name)))
+                    .slice(0, limit)
+                    .map(row => row.customer);
+            }
+
+            async function getProduct(id) {
+                const products = await getAll('products');
+                return products.find(product => Number(product.id) === Number(id)) || null;
+            }
+
+            async function getCustomer(id) {
+                const customers = await getAll('customers');
+                return customers.find(customer => Number(customer.id) === Number(id)) || null;
+            }
+
+            async function resolvePrice(customerId, productId, defaultPrice) {
+                const pricing = await getAll('pricing');
+                const customerPrice = pricing.find(row => Number(row.customer_id) === Number(customerId) && Number(row.product_id) === Number(productId) && row.source === 'approved_special_price')
+                    || pricing.find(row => row.customer_id === null && Number(row.product_id) === Number(productId) && row.source === 'approved_special_price')
+                    || pricing.find(row => Number(row.customer_id) === Number(customerId) && Number(row.product_id) === Number(productId));
+
+                return customerPrice || {
+                    price: Number(defaultPrice || 0),
+                    source: 'default'
+                };
+            }
+
+            if (isAuthenticated) {
+                window.setTimeout(() => sync(false), 400);
+                window.setInterval(() => sync(false), syncInterval);
+            }
+
+            return {
+                allProducts: () => getAll('products'),
+                allCustomers: () => getAll('customers'),
+                getProduct,
+                getCustomer,
+                resolvePrice,
+                searchProducts,
+                searchCustomers,
+                sync
+            };
+        })();
+
         // RESPONSIVENESS ROLLBACK
         // REMOVE OVERLAY SYSTEM
         // LOADING STATE FIX

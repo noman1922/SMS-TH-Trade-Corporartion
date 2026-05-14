@@ -18,20 +18,26 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $perPage = in_array((int) $request->input('per_page', 20), [20, 50, 100], true)
+            ? (int) $request->input('per_page', 20)
+            : 20;
 
         // PERFORMANCE OPTIMIZATION
         // QUERY OPTIMIZATION
+        // PRODUCT PAGINATION IMPROVEMENT
         $products = Product::query()
             ->select('id', 'product_name', 'product_id', 'model_no', 'pack_size', 'cost_price', 'selling_price', 'stock_quantity', 'category', 'created_at')
             ->when($search, function ($query, $search) {
+                // POS SEARCH IMPROVEMENT
                 return $query->where('product_name', 'like', "%{$search}%")
+                             ->orWhere('model_no', 'like', "%{$search}%")
                              ->orWhere('product_id', 'like', "%{$search}%");
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('admin.products.index', compact('products', 'search'));
+        return view('admin.products.index', compact('products', 'search', 'perPage'));
     }
 
     /**

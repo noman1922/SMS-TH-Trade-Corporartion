@@ -63,6 +63,13 @@
                 <i class="bi bi-cash-stack"></i> Due Collection
             </a>
         </li>
+        @if(auth()->user()->role === 'admin')
+        <li class="nav-item">
+            <a href="{{ route('staff-management.index') }}" class="nav-link {{ request()->routeIs('staff-management.*') ? 'active' : '' }}">
+                <i class="bi bi-person-badge"></i> Staff Management
+            </a>
+        </li>
+        @endif
 
         <!-- Reports (Admin Only) -->
         @if(auth()->user()->role === 'admin')

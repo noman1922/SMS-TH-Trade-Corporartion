@@ -20,18 +20,23 @@ class StockController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $perPage = in_array((int) $request->input('per_page', 20), [20, 50, 100], true)
+            ? (int) $request->input('per_page', 20)
+            : 20;
 
         // PERFORMANCE OPTIMIZATION
         // QUERY OPTIMIZATION
         // Current Stock Levels
+        // POS SEARCH IMPROVEMENT
         $products = Product::query()
             ->select('id', 'product_name', 'product_id', 'model_no', 'cost_price', 'selling_price', 'stock_quantity', 'category')
             ->when($search, function ($query, $search) {
                 return $query->where('product_name', 'like', "%{$search}%")
+                             ->orWhere('model_no', 'like', "%{$search}%")
                              ->orWhere('product_id', 'like', "%{$search}%");
             })
             ->orderBy('stock_quantity', 'asc')
-            ->paginate(10, ['*'], 'products_page')
+            ->paginate($perPage, ['*'], 'products_page')
             ->withQueryString();
 
         // Recent History Logs
@@ -41,7 +46,7 @@ class StockController extends Controller
             ->paginate(15, ['*'], 'history_page')
             ->withQueryString();
 
-        return view('admin.stock.index', compact('products', 'histories', 'search'));
+        return view('admin.stock.index', compact('products', 'histories', 'search', 'perPage'));
     }
 
     /**

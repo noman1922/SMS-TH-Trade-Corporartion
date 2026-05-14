@@ -3,12 +3,31 @@
 @section('title', 'Due Report')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row mb-4">
+{{-- // STANDARD PRINT SYSTEM --}}
+{{-- // REPORT PRINT FLOW --}}
+{{-- // ERP REPORT PRINT LAYOUT --}}
+<div class="container-fluid standard-print-page">
+    <div class="row mb-4 d-print-none">
         <div class="col-md-6">
             <h3 class="fw-bold">Outstanding Due Report</h3>
         </div>
-        {{-- // ROW PRINT FIX --}}
+        <div class="col-md-6 text-end d-print-none">
+            {{-- // SINGLE TAB PRINT FIX — no new tab, no duplicate pages --}}
+            <button type="button" onclick="handlePrintClick(this)" class="btn btn-secondary">
+                <i class="bi bi-printer me-1"></i> Print Report
+            </button>
+        </div>
+    </div>
+
+    <div class="standard-print-title-row d-none">
+        <div>
+            <h1 class="standard-print-title">Outstanding Due Report</h1>
+            <div>TH Trade Corporation</div>
+        </div>
+        <div class="standard-print-meta">
+            <strong>Collection Period:</strong> {{ \Carbon\Carbon::parse($fromDate)->format('d M, Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('d M, Y') }}<br>
+            <strong>Printed:</strong> {{ now()->format('d M, Y h:i A') }}
+        </div>
     </div>
 
     {{-- // PAYMENT FLOW IMPROVEMENT --}}
@@ -159,5 +178,28 @@
             </div>
         </div>
     </div>
+    <div class="standard-print-footer d-none">
+        <div class="standard-print-signatures">
+            <div class="standard-print-signature">Prepared By</div>
+            <div class="standard-print-signature">Authorized Signature</div>
+        </div>
+    </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    // SINGLE TAB PRINT FIX
+    // ERP PRINT STANDARDIZATION
+    function handlePrintClick(button) {
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...';
+        window.setTimeout(function() {
+            window.print();
+            button.disabled = false;
+            button.innerHTML = original;
+        }, 120);
+    }
+</script>
 @endsection

@@ -28,17 +28,18 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
-    <div class="row mb-4">
+<div class="container-fluid standard-print-page">
+    <div class="row mb-4 d-print-none">
         <div class="col-md-6">
             <h3 class="fw-bold">Customer Ledger</h3>
         </div>
         <div class="col-md-6 text-end d-print-none">
             @if($customer)
+                {{-- // SINGLE TAB PRINT FIX — no new tab, no duplicate pages --}}
                 <a href="{{ route('receipt.print', $customer->id) }}" class="btn btn-secondary me-2" target="_blank">
                     <i class="bi bi-printer me-1"></i> Print Statement
                 </a>
-                <button onclick="window.print()" class="btn btn-outline-secondary">
+                <button type="button" onclick="handlePrintClick(this)" class="btn btn-outline-secondary">
                     <i class="bi bi-printer me-1"></i> Print Ledger
                 </button>
             @endif
@@ -79,11 +80,18 @@
     </div>
 
     @if($customer)
-        <div class="d-none d-print-block mb-3">
-            <h4 class="fw-bold mb-1">TH Trade Corporation - Customer Ledger</h4>
-            <div><strong>Customer ID:</strong> {{ $customer->customer_id }} | <strong>Organization:</strong> {{ $customer->hospital_name }}</div>
-            <div><strong>Contact:</strong> {{ $customer->customer_name ?: 'N/A' }} | <strong>Mobile:</strong> {{ $customer->mobile }}</div>
-            <div><strong>Generated:</strong> {{ now()->format('d M, Y h:i A') }}</div>
+        {{-- // STANDARD PRINT SYSTEM --}}
+        {{-- // REPORT PRINT FLOW --}}
+        {{-- // ERP REPORT PRINT LAYOUT --}}
+        <div class="standard-print-title-row d-none">
+            <div>
+                <h1 class="standard-print-title">Customer Ledger</h1>
+                <div>{{ $customer->customer_id }} - {{ $customer->hospital_name }}</div>
+            </div>
+            <div class="standard-print-meta">
+                <strong>Contact:</strong> {{ $customer->customer_name ?: 'N/A' }} | {{ $customer->mobile }}<br>
+                <strong>Printed:</strong> {{ now()->format('d M, Y h:i A') }}
+            </div>
         </div>
 
         <div class="row mb-4">
@@ -118,6 +126,12 @@
                         <h4 class="mb-0 fw-bold text-danger">Tk. {{ number_format($closingBalance, 2) }}</h4>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="standard-print-footer d-none">
+            <div class="standard-print-signatures">
+                <div class="standard-print-signature">Customer Signature</div>
+                <div class="standard-print-signature">Authorized Signature</div>
             </div>
         </div>
 
@@ -208,4 +222,11 @@
         </div>
     @endif
 </div>
+@if($isPrint)
+    <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(function() { window.print(); }, 200);
+        });
+    </script>
+@endif
 @endsection

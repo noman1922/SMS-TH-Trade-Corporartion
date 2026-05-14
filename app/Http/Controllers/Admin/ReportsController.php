@@ -50,9 +50,13 @@ class ReportsController extends Controller
                 $query->select(Customer::safeSelectColumns(['id', 'customer_id', 'customer_name', 'hospital_name']));
             }])
             ->select('id', 'invoice_no', 'customer_id', 'net_payable', 'received_amount', 'due_amount', 'date')
-            ->orderBy('date', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy('date', 'desc');
+
+        // REPORT PRINT FLOW
+        $isPrint = $request->boolean('print');
+        $invoices = $isPrint
+            ? $invoices->get()
+            : $invoices->paginate(20)->withQueryString();
 
         // PAYMENT FLOW IMPROVEMENT
         // REPORT TIMELINE
@@ -63,7 +67,7 @@ class ReportsController extends Controller
             ->get()
             ->keyBy(fn ($row) => (int) $row->month);
 
-        return view('admin.reports.sales', compact('invoices', 'summary', 'fromDate', 'toDate', 'monthlySales', 'reportYear'));
+        return view('admin.reports.sales', compact('invoices', 'summary', 'fromDate', 'toDate', 'monthlySales', 'reportYear', 'isPrint'));
     }
 
     /**
@@ -101,18 +105,26 @@ class ReportsController extends Controller
             ->orderBy('month')
             ->get();
 
-        return view('admin.reports.profit', compact('profitData', 'monthlyProfit', 'fromDate', 'toDate'));
+        // REPORT PRINT FLOW
+        $isPrint = $request->boolean('print');
+
+        return view('admin.reports.profit', compact('profitData', 'monthlyProfit', 'fromDate', 'toDate', 'isPrint'));
     }
 
     /**
      * Stock Valuation Report
      */
-    public function stockReport()
+    public function stockReport(Request $request)
     {
         // QUERY OPTIMIZATION
-        $products = Product::select('id', 'product_id', 'product_name', 'cost_price', 'selling_price', 'stock_quantity', 'category')
-            ->orderBy('stock_quantity', 'asc')
-            ->paginate(25);
+        $productsQuery = Product::select('id', 'product_id', 'product_name', 'cost_price', 'selling_price', 'stock_quantity', 'category')
+            ->orderBy('stock_quantity', 'asc');
+
+        // REPORT PRINT FLOW
+        $isPrint = $request->boolean('print');
+        $products = $isPrint
+            ? $productsQuery->get()
+            : $productsQuery->paginate(25)->withQueryString();
         
         $totalValuation = round((float) Product::select(
             DB::raw('COALESCE(SUM(stock_quantity * cost_price), 0) as total')
@@ -120,7 +132,7 @@ class ReportsController extends Controller
 
         $lowStockCount = Product::where('stock_quantity', '<', 5)->count();
 
-        return view('admin.reports.stock', compact('products', 'totalValuation', 'lowStockCount'));
+        return view('admin.reports.stock', compact('products', 'totalValuation', 'lowStockCount', 'isPrint'));
     }
 
     /**
@@ -167,7 +179,10 @@ class ReportsController extends Controller
             'amount' => round((float) $collections->sum('amount'), 2),
         ];
 
-        return view('admin.reports.due', compact('customers', 'totalOutstanding', 'collections', 'collectionSummary', 'fromDate', 'toDate'));
+        // REPORT PRINT FLOW
+        $isPrint = $request->boolean('print');
+
+        return view('admin.reports.due', compact('customers', 'totalOutstanding', 'collections', 'collectionSummary', 'fromDate', 'toDate', 'isPrint'));
     }
 
     /**
@@ -276,7 +291,10 @@ class ReportsController extends Controller
             $closingBalance = $runningBalance;
         }
 
-        return view('admin.reports.ledger', compact('customers', 'customer', 'ledger', 'openingBalance', 'closingBalance', 'fromDate', 'toDate'));
+        // REPORT PRINT FLOW
+        $isPrint = $request->boolean('print');
+
+        return view('admin.reports.ledger', compact('customers', 'customer', 'ledger', 'openingBalance', 'closingBalance', 'fromDate', 'toDate', 'isPrint'));
     }
 
     public function customerDueReceipt(Customer $customer)

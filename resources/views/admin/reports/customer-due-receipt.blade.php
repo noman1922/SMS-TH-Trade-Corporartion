@@ -8,6 +8,7 @@
     <style>
         /* // CUSTOMER MODULE IMPROVEMENT */
         /* // CUSTOMER LEDGER SYSTEM */
+        /* // STANDARD PRINT SYSTEM */
         body {
             background: #d9d9d9;
             color: #111;
@@ -25,7 +26,7 @@
             width: 210mm;
             min-height: 297mm;
             margin: 0 auto 20px;
-            padding: 14mm 12mm;
+            padding: 42mm 12mm 12mm;
             box-shadow: 0 3px 18px rgba(0, 0, 0, 0.18);
         }
 
@@ -182,7 +183,7 @@
                 width: 210mm;
                 min-height: 297mm;
                 margin: 0;
-                padding: 12mm;
+                padding: 42mm 12mm 12mm;
                 box-shadow: none;
             }
 

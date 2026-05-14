@@ -3,15 +3,30 @@
 @section('title', 'Stock Report')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row mb-4">
+{{-- // STANDARD PRINT SYSTEM --}}
+{{-- // REPORT PRINT FLOW --}}
+{{-- // ERP REPORT PRINT LAYOUT --}}
+<div class="container-fluid standard-print-page">
+    <div class="row mb-4 d-print-none">
         <div class="col-md-6">
             <h3 class="fw-bold">Inventory Valuation Report</h3>
         </div>
-        <div class="col-md-6 text-end">
-            <button onclick="window.print()" class="btn btn-secondary pe-3">
+        <div class="col-md-6 text-end d-print-none">
+            {{-- // SINGLE TAB PRINT FIX — no new tab, no duplicate pages --}}
+            <button type="button" onclick="handlePrintClick(this)" class="btn btn-secondary pe-3">
                 <i class="bi bi-printer me-1"></i> Print Report
             </button>
+        </div>
+    </div>
+
+    <div class="standard-print-title-row d-none">
+        <div>
+            <h1 class="standard-print-title">Inventory Valuation</h1>
+            <div>TH Trade Corporation</div>
+        </div>
+        <div class="standard-print-meta">
+            <strong>Printed:</strong> {{ now()->format('d M, Y h:i A') }}<br>
+            <strong>Total Items:</strong> {{ method_exists($products, 'total') ? $products->total() : $products->count() }}
         </div>
     </div>
 
@@ -78,11 +93,34 @@
                 </table>
             </div>
         </div>
-        @if($products->hasPages())
+        @if(method_exists($products, 'hasPages') && $products->hasPages())
             <div class="card-footer bg-white d-print-none">
                 {{ $products->links() }}
             </div>
         @endif
     </div>
+    <div class="standard-print-footer d-none">
+        <div class="standard-print-signatures">
+            <div class="standard-print-signature">Prepared By</div>
+            <div class="standard-print-signature">Authorized Signature</div>
+        </div>
+    </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    // SINGLE TAB PRINT FIX
+    // ERP PRINT STANDARDIZATION
+    function handlePrintClick(button) {
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...';
+        window.setTimeout(function() {
+            window.print();
+            button.disabled = false;
+            button.innerHTML = original;
+        }, 120);
+    }
+</script>
 @endsection
